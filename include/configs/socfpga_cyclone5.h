@@ -17,6 +17,8 @@
 /* Virtual target or real hardware */
 #undef CONFIG_SOCFPGA_VIRTUAL_TARGET
 
+#define CONFIG_SYS_GENERIC_BOARD
+
 #define CONFIG_ARMV7
 #define CONFIG_SYS_DCACHE_OFF
 #undef CONFIG_USE_IRQ
