@@ -636,6 +636,7 @@ libs-y += drivers/power/ \
 libs-y += drivers/spi/
 libs-$(CONFIG_FMAN_ENET) += drivers/net/fm/
 libs-$(CONFIG_SYS_FSL_DDR) += drivers/ddr/fsl/
+libs-$(CONFIG_ALTERA_SDRAM) += drivers/ddr/altera/
 libs-y += drivers/serial/
 libs-y += drivers/usb/eth/
 libs-y += drivers/usb/gadget/
