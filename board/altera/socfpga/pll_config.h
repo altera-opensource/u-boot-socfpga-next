@@ -12,7 +12,7 @@
 /* PLL configuration data */
 /* Main PLL */
 #define CONFIG_HPS_MAINPLLGRP_VCO_DENOM			(0)
-#define CONFIG_HPS_MAINPLLGRP_VCO_NUMER			(63)
+#define CONFIG_HPS_MAINPLLGRP_VCO_NUMER			(73)
 #define CONFIG_HPS_MAINPLLGRP_MPUCLK_CNT		(0)
 #define CONFIG_HPS_MAINPLLGRP_MAINCLK_CNT		(0)
 #define CONFIG_HPS_MAINPLLGRP_DBGATCLK_CNT		(0)
@@ -36,7 +36,7 @@
 
 /* Peripheral PLL */
 #define CONFIG_HPS_PERPLLGRP_VCO_DENOM			(1)
-#define CONFIG_HPS_PERPLLGRP_VCO_NUMER			(39)
+#define CONFIG_HPS_PERPLLGRP_VCO_NUMER			(79)
 /*
  * To tell where is the VCOs source:
  * 0 = EOSC1
