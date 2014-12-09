@@ -144,4 +144,14 @@ struct socfpga_system_manager {
 #define SYSMGR_EMACGRP_CTRL_PHYSEL1_LSB			2
 #define SYSMGR_EMACGRP_CTRL_PHYSEL_MASK			0x3
 
+/*
+ * SCU Non-secure Access Control
+ */
+#define SOCFPGA_SCU_SNSAC	(SOCFPGA_MPUSCU_ADDRESS + 0x54)
+/*
+ * L2 PL-310
+ * for configuring L2 address filtering start address in assembly.
+ */
+#define SOCFPGA_MPUL2_ADRFLTR_START			(0xC00)
+
 #endif /* _SYSTEM_MANAGER_H_ */
