@@ -21,13 +21,13 @@ SECTIONS
 		*(.vectors)
 		arch/arm/cpu/armv7/start.o	(.text*)
 		*(.text*)
-	} >.sdram
+	} >.sram
 
 	. = ALIGN(4);
-	.rodata : { *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*))) } >.sdram
+	.rodata : { *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*))) } >.sram
 
 	. = ALIGN(4);
-	.data : { *(SORT_BY_ALIGNMENT(.data*)) } >.sdram
+	.data : { *(SORT_BY_ALIGNMENT(.data*)) } >.sram
 
 	. = ALIGN(4);
 	__image_copy_end = .;
@@ -43,5 +43,5 @@ SECTIONS
 		*(.bss*)
 		. = ALIGN(4);
 		__bss_end = .;
-	} >.sdram
+	} >.sram
 }
