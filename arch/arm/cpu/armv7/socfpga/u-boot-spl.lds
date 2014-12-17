@@ -5,6 +5,8 @@
  */
 
 MEMORY { .sdram : ORIGIN = (0), LENGTH = (0xffffffff) }
+MEMORY { .sram : ORIGIN = CONFIG_SPL_TEXT_BASE,\
+		LENGTH = CONFIG_SPL_MAX_SIZE }
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
