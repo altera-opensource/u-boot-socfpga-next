@@ -16,6 +16,7 @@
 #include <asm/arch/freeze_controller.h>
 #include <asm/arch/clock_manager.h>
 #include <asm/arch/scan_manager.h>
+#include <asm/arch/sdram.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -175,4 +176,13 @@ void spl_board_init(void)
 
 	/* enable console uart printing */
 	preloader_console_init();
+
+	checkboard();
+
+	if (sdram_mmr_init_full(0xffffffff) != 0)
+		hang();
+	puts("SDRAM: Calibrating PHY\n");
+	/* SDRAM calibration */
+	if (sdram_calibration_full() == 0)
+		hang();
 }
