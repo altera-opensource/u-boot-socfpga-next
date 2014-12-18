@@ -51,4 +51,11 @@ SECTIONS
 		. = ALIGN(8);
 		__stack_start = .;
 	} >.sram
+
+	.sdram_stack :
+	{
+		__sdram_stack_end = .;
+		. = . + CONFIG_SPL_SDRAM_STACK_SIZE;
+		__sdram_stack_start = .;
+	} >.sdram
 }

@@ -322,6 +322,7 @@ unsigned int cm_get_qspi_controller_clk_hz(void);
  * Stack setup
  */
 #define CONFIG_SPL_STACK		CONFIG_SYS_INIT_SP_ADDR
+#define CONFIG_SPL_SDRAM_STACK_SIZE	(128 * 1024)
 
 #ifdef CONFIG_SPL_BUILD
 #undef CONFIG_PARTITIONS
