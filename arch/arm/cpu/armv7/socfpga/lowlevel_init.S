@@ -14,10 +14,6 @@ save_boot_params:
 	bx	lr
 
 
-/* Set up the platform, once the cpu has been initialized */
-.globl lowlevel_init
-lowlevel_init:
-
 	/* Remap */
 #ifdef CONFIG_SPL_BUILD
 	/*
