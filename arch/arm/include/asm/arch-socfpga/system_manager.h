@@ -15,8 +15,6 @@ void sysmgr_enable_warmrstcfgio(void);
 /* declaration for handoff table type */
 extern unsigned long sys_mgr_init_table[CONFIG_HPS_PINMUX_NUM];
 
-#endif
-
 struct socfpga_system_manager {
 	/* System Manager Module */
 	u32	siliconid1;			/* 0x00 */
@@ -118,6 +116,8 @@ struct socfpga_system_manager {
 	u32	spim0usefpga;			/* 0x738 */
 };
 
+#endif /* __ASSEMBLY__ */
+
 #define SYSMGR_ROMCODEGRP_CTRL_WARMRSTCFGPINMUX	(1 << 0)
 #define SYSMGR_ROMCODEGRP_CTRL_WARMRSTCFGIO	(1 << 1)
 #define SYSMGR_ECC_OCRAM_EN	(1 << 0)
@@ -153,5 +153,10 @@ struct socfpga_system_manager {
  * for configuring L2 address filtering start address in assembly.
  */
 #define SOCFPGA_MPUL2_ADRFLTR_START			(0xC00)
+
+#define SYSMGR_BOOTINFO			(SOCFPGA_SYSMGR_ADDRESS + 0x14)
+#define SYSMGR_BOOTINFO_CSEL_LSB 	3
+#define SYSMGR_BOOTINFO_CSEL_MASK	0x18
+#define SYSMGR_BOOTINFO_BSEL_MASK	0x7
 
 #endif /* _SYSTEM_MANAGER_H_ */

@@ -6,44 +6,49 @@
 
 #include <config.h>
 #include <version.h>
+#include <linux/linkage.h>
+#include <asm-offsets.h>
+#include <asm/arch/reset_manager.h>
+#include <asm/arch/system_manager.h>
 
 /* Save the parameter pass in by previous boot loader */
 .global save_boot_params
 save_boot_params:
 	/* no parameter to save */
-	bx	lr
 
-
-	/* Remap */
 #ifdef CONFIG_SPL_BUILD
 	/*
-	 * SPL : configure the remap (L3 NIC-301 GPV)
-	 * so the on-chip RAM at lower memory instead ROM.
-	 */
-	ldr	r0, =SOCFPGA_L3REGS_ADDRESS
-	mov	r1, #0x19
-	str	r1, [r0]
-#else
-	/*
-	 * U-Boot : configure the remap (L3 NIC-301 GPV)
-	 * so the SDRAM at lower memory instead on-chip RAM.
-	 */
-	ldr	r0, =SOCFPGA_L3REGS_ADDRESS
-	mov	r1, #0x2
-	str	r1, [r0]
+	 * If BSEL is zero, then the bootrom has not
+         * handed any information to preloader.
+         */
+	ldr	r9,=SYSMGR_BOOTINFO
+	ldr 	r9, [r9]
+	and	r9, r9, #SYSMGR_BOOTINFO_BSEL_MASK
+	cmp	r9, #0
+	bne	bsel_non_zero
+	ldr	r4, =rst_mgr_status
+	ldr	r5, =RSTMGR_COLDRST_MASK
+	str	r5, [r4]
+	b	bsel_zero
 
-	/* Private components security */
+bsel_non_zero:
+	/* get the reset manager status register passed by BootROM */
+	add	r5, r0,#0x38
+	ldr	r4, =rst_mgr_status
+	ldr	r5, [r5]
+	str	r5, [r4]
 
+bsel_zero:
 	/*
-	 * U-Boot : configure private timer, global timer and cpu
-	 * component access as non secure for kernel stage (as required
-	 * by kernel)
+	 * Initialize the early stack point on OCRAM. This is to avoid OCRAM
+	 * false double bit error as OCRAM always ready in 64 bit manner
 	 */
-	mrc	p15,4,r0,c15,c0,0
-	add	r1, r0, #0x54
-	ldr	r2, [r1]
-	orr	r2, r2, #0xff
-	orr	r2, r2, #0xf00
-	str	r2, [r1]
+	ldr	r1, =(CONFIG_SYS_INIT_SP_ADDR)	/* start of temporary SP */
+	sub	r0, r1, #GD_SIZE	/* start of mem init */
+	mov	r2, #0x00000000		/* prepare zero to mem init */
+clrsp:	cmp	r0, r1			/* while not at end of BSS */
+	strlo	r2, [r0]		/* clear 32-bit BSS word */
+	addlo	r0, r0, #4		/* move to next */
+	blo	clrsp
 #endif	/* #ifdef CONFIG_SPL_BUILD */
-	mov	pc, lr
+	bx	lr
