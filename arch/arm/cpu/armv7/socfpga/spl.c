@@ -155,6 +155,9 @@ void spl_board_init(void)
 	/* reconfigure the PLLs */
 	cm_basic_init(&cm_default_cfg);
 
+	/* Enable bootrom to configure IOs. */
+	sysmgr_enable_warmrstcfgio();
+
 	/* configure the IOCSR / IO buffer settings */
 	if (scan_mgr_configure_iocsr())
 		hang();
