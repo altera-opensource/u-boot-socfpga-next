@@ -52,3 +52,27 @@ clrsp:	cmp	r0, r1			/* while not at end of BSS */
 	blo	clrsp
 #endif	/* #ifdef CONFIG_SPL_BUILD */
 	bx	lr
+
+#ifdef CONFIG_SPL_BUILD
+ENTRY(relocate_stack_to_sdram)
+	PUSH	{r4-r11, lr}		/* save registers per AAPCS */
+
+	mov	r0, sp			/* [r0] source address */
+	ldr	r2, =__stack_start	/* [r2] source end address */
+	sub	r3, r2, r0
+	ldr	r4, =__sdram_stack_start
+	sub	r1, r4, r3		/* [r1] target address */
+	mov	r5, r1			/* [r5] new sp within SDRAM */
+
+relocate_loop1:
+	ldmia	r0!, {r3}
+	stmia	r1!, {r3}
+	cmp	r0, r2
+	blo	relocate_loop1
+
+	/* assign SP to new address within SDRAM now */
+	mov	sp, r5
+
+	POP	{r4-r11, pc}
+ENDPROC(relocate_stack_to_sdram)
+#endif /* CONFIG_SPL_BUILD */
