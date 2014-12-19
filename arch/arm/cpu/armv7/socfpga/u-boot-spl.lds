@@ -44,4 +44,11 @@ SECTIONS
 		. = ALIGN(4);
 		__bss_end = .;
 	} >.sram
+
+	.stack :
+	{
+		. = . + CONFIG_SPL_STACK_SIZE;
+		. = ALIGN(8);
+		__stack_start = .;
+	} >.sram
 }
