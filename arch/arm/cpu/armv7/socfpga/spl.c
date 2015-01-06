@@ -191,4 +191,12 @@ void spl_board_init(void)
 
 	sdram_size = sdram_calculate_size();
 	printf("SDRAM: %ld MiB\n", (sdram_size >> 20));
+
+	/* Sanity check ensure correct SDRAM size specified */
+	puts("SDRAM: Ensuring specified SDRAM size is correct ...");
+	if (get_ram_size(0, sdram_size) != sdram_size) {
+		puts("failed\n");
+		hang();
+	}
+	puts("passed\n");
 }
