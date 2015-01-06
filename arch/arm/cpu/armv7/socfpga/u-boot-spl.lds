@@ -45,6 +45,13 @@ SECTIONS
 		__bss_end = .;
 	} >.sram
 
+	.malloc :
+	{
+		. = . + CONFIG_SPL_MALLOC_SIZE;
+		. = ALIGN(8);
+		__malloc_start = .;
+	} >.sram
+
 	.stack :
 	{
 		. = . + CONFIG_SPL_STACK_SIZE;
