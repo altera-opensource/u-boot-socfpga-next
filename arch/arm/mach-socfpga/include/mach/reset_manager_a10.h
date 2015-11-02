@@ -8,19 +8,15 @@
 #define	_SOCFPGA_RESET_MANAGER_A10_H_
 
 #ifndef __ASSEMBLY__
-void reset_deassert_noc_ddr_scheduler(void);
-void watchdog_disable(void);
-int is_wdt_in_reset(void);
 void emac_manage_reset(ulong emacbase, uint state);
 void reset_assert_all_bridges(void);
-void reset_deassert_bridges_handoff(void);
 void reset_assert_all_peripherals_except_l4wd0_l4timer0(void);
-void reset_assert_uart(void);
-void reset_deassert_uart(void);
 void reset_deassert_dedicated_peripherals(void);
 void reset_deassert_shared_connected_peripherals(void);
 void reset_deassert_fpga_connected_peripherals(void);
-void reset_deassert_osc1wd0(void);
+
+
+void socfpga_per_reset(u32 reset, int set);
 #endif /* __ASSEMBLY__ */
 
 struct socfpga_reset_manager {
@@ -32,11 +28,11 @@ struct socfpga_reset_manager {
 	u32 hdskreq;
 	u32 hdskack;
 	u32 counts;
-	u32 mpumodrst;
-	u32 per0modrst;
-	u32 per1modrst;
-	u32 brgmodrst;
-	u32 sysmodrst;
+	u32 mpu_mod_rst;
+	u32 per0_mod_rst;
+	u32 per1_mod_rst;
+	u32 brg_mod_rst;
+	u32 sys_mod_rst;
 	u32 coldmodrst;
 	u32 nrstmodrst;
 	u32 dbgmodrst;
@@ -120,5 +116,54 @@ struct socfpga_reset_manager {
 #define ALT_RSTMGR_HDSKEN_FPGAMGRHSEN_SET_MSK	0x00000002
 #define ALT_RSTMGR_HDSKEN_FPGAHSEN_SET_MSK	0x00000004
 #define ALT_RSTMGR_HDSKEN_ETRSTALLEN_SET_MSK	0x00000008
+
+/*
+ * Define a reset identifier, from which a permodrst bank ID
+ * and reset ID can be extracted using the subsequent macros
+ * RSTMGR_RESET() and RSTMGR_BANK().
+ */
+#define RSTMGR_BANK_OFFSET	8
+#define RSTMGR_BANK_MASK	0x7
+#define RSTMGR_RESET_OFFSET	0
+#define RSTMGR_RESET_MASK	0x1f
+#define RSTMGR_DEFINE(_bank, _offset)		\
+	((_bank) << RSTMGR_BANK_OFFSET) | ((_offset) << RSTMGR_RESET_OFFSET)
+
+/* Extract reset ID from the reset identifier. */
+#define RSTMGR_RESET(_reset)			\
+	(((_reset) >> RSTMGR_RESET_OFFSET) & RSTMGR_RESET_MASK)
+
+/* Extract bank ID from the reset identifier. */
+#define RSTMGR_BANK(_reset)			\
+(((_reset) >> RSTMGR_BANK_OFFSET) & RSTMGR_BANK_MASK)
+
+/*
+ * SocFPGA Cyclone V/Arria V reset IDs, bank mapping is as follows:
+ * 0 ... mpumodrst
+ * 1 ... per0modrst
+ * 2 ... per1modrst
+ * 3 ... brgmodrst
+ * 4 ... sysmodrst
+ */
+#define RSTMGR_EMAC0		RSTMGR_DEFINE(1, 0)
+#define RSTMGR_EMAC1		RSTMGR_DEFINE(1, 1)
+#define RSTMGR_EMAC2		RSTMGR_DEFINE(1, 2)
+#define RSTMGR_WD0		RSTMGR_DEFINE(2, 0)
+#define RSTMGR_WD1		RSTMGR_DEFINE(2, 1)
+#define RSTMGR_L4SYSTIMER0	RSTMGR_DEFINE(2, 2)
+#define RSTMGR_L4SYSTIMER1	RSTMGR_DEFINE(2, 3)
+#define RSTMGR_SPTIMER0		RSTMGR_DEFINE(2, 4)
+#define RSTMGR_SPTIMER1		RSTMGR_DEFINE(2, 5)
+#define RSTMGR_UART0		RSTMGR_DEFINE(2, 16)
+#define RSTMGR_UART1		RSTMGR_DEFINE(2, 17)
+#define RSTMGR_SPIM0		RSTMGR_DEFINE(1, 17)
+#define RSTMGR_SPIM1		RSTMGR_DEFINE(1, 18)
+#define RSTMGR_QSPI		RSTMGR_DEFINE(1, 6)
+#define RSTMGR_SDMMC		RSTMGR_DEFINE(1, 7)
+#define RSTMGR_DMA		RSTMGR_DEFINE(1, 16)
+#define RSTMGR_DDRSCH		RSTMGR_DEFINE(3, 6)
+
+/* Create a human-readable reference to SoCFPGA reset. */
+#define SOCFPGA_RESET(_name)	RSTMGR_##_name
 
 #endif /* _SOCFPGA_RESET_MANAGER_A10_H_ */
