@@ -5,13 +5,12 @@
  */
 
 #include <common.h>
+#include <asm/errno.h>
 #include <asm/io.h>
 #include <asm/arch/fpga_manager.h>
 #include <asm/arch/reset_manager.h>
 #include <asm/arch/system_manager.h>
 #include <asm/arch/sdram.h>
-#include <altera.h>
-#include <errno.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -23,9 +22,9 @@ static const struct socfpga_system_manager *system_manager_base =
 		(void *)SOCFPGA_SYSMGR_ADDRESS;
 #endif
 
-static uint32_t fpgamgr_get_msel(void)
+static u32 fpgamgr_get_msel(void)
 {
-	uint32_t reg;
+	u32 reg;
 
 	reg = readl(&fpga_manager_base->imgcfg_stat);
 	reg = ((reg & ALT_FPGAMGR_IMGCFG_STAT_F2S_MSEL_SET_MSD) >>
@@ -211,12 +210,6 @@ static int fpgamgr_set_cdratio_cdwidth(unsigned int cfg_width, u32 *rbf_data,
 
 	compress = (rbf_data[229] >> 1) & 1;
 	compress = !compress;
-
-#if 0
-	printf("header word %d = %08x\n", 69, rbf_data[69]);
-	printf("header word %d = %08x\n", 229, rbf_data[229]);
-	printf("read from rbf header: encrypt=%d compress=%d\n", encrypt, compress);
-#endif
 
 	/*
 	 * from the register map description of cdratio in imgcfg_ctrl_02:
