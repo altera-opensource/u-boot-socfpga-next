@@ -15,16 +15,16 @@ static const struct socfpga_clock_manager *clock_manager_base =
 static u32 eosc1_hz;
 static u32 cb_intosc_hz;
 static u32 f2s_free_hz;
-uint32_t cm_l4_main_clk_hz = 0;
-uint32_t cm_l4_sp_clk_hz = 0;
-uint32_t cm_l4_mp_clk_hz = 0;
+u32 cm_l4_main_clk_hz = 0;
+u32 cm_l4_sp_clk_hz = 0;
+u32 cm_l4_mp_clk_hz = 0;
 #define LOCKED_MASK \
 	(CLKMGR_CLKMGR_STAT_MAINPLLLOCKED_SET_MSK  | \
 	CLKMGR_CLKMGR_STAT_PERPLLLOCKED_SET_MSK)
 
-static inline void cm_wait_for_lock(uint32_t mask)
+static inline void cm_wait_for_lock(u32 mask)
 {
-	register uint32_t inter_val;
+	register u32 inter_val;
 	do {
 		inter_val = readl(&clock_manager_base->stat) & mask;
 	} while (inter_val != mask);
@@ -33,7 +33,7 @@ static inline void cm_wait_for_lock(uint32_t mask)
 /* function to poll in the fsm busy bit */
 static inline void cm_wait4fsm(void)
 {
-	register uint32_t inter_val;
+	register u32 inter_val;
 	do {
 		inter_val = readl(&clock_manager_base->stat) &
 			CLKMGR_CLKMGR_STAT_BUSY_SET_MSK;
@@ -414,7 +414,6 @@ int of_get_clk_cfg(const void *blob, struct mainpll_cfg *main_cfg,
 
 static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 {
-#ifndef TEST_AT_ASIMOV
 	/* gate off all mainpll clock excpet HW managed clock */
 	writel(CLKMGR_MAINPLL_EN_S2FUSER0CLKEN_SET_MSK |
 		CLKMGR_MAINPLL_EN_HMCPLLREFCLKEN_SET_MSK,
@@ -492,12 +491,10 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	clrbits_le32(&clock_manager_base->per_pll_vco0,
 		CLKMGR_PERPLL_VCO0_BGPWRDN_SET_MSK |
 		CLKMGR_PERPLL_VCO0_PWRDN_SET_MSK);
-#endif /***************** TEST_AT_ASIMOV *****************/
 
 	/* Wait for at least 7 us */
 	udelay(7);
 
-#ifndef TEST_AT_ASIMOV
 	/* enable the VCO and disable the external regulator to PLL */
 	writel((readl(&clock_manager_base->main_pll_vco0) &
 		~CLKMGR_MAINPLL_VCO0_REGEXTSEL_SET_MSK) |
@@ -661,9 +658,9 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 		CLKMGR_CLKMGR_INTR_MAINPLLFBSLIP_SET_MSK |
 		CLKMGR_CLKMGR_INTR_PERPLLFBSLIP_SET_MSK,
 		&clock_manager_base->intr);
-#endif /***************** TEST_AT_ASIMOV *****************/
 	return 0;
 }
+
 int cm_basic_init(const void *blob)
 {
 	struct mainpll_cfg main_cfg;
