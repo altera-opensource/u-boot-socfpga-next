@@ -666,6 +666,9 @@ int cm_basic_init(const void *blob)
 	struct mainpll_cfg main_cfg;
 	struct perpll_cfg per_cfg;
 	int rval;
+	u32 cm_l4_main_clk_hz;
+	u32 cm_l4_sp_clk_hz;
+	u32 cm_l4_mp_clk_hz;
 
 	/* initialize to zero for use case of optional node */
 	memset(&main_cfg, 0, sizeof(main_cfg));
