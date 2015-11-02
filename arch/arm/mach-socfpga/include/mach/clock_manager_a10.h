@@ -9,10 +9,7 @@
 
 #ifndef __ASSEMBLY__
 int cm_basic_init(const void* blob);
-extern unsigned int cm_get_mmc_controller_clk_hz(void);
-extern u32 cm_l4_main_clk_hz;
-extern u32 cm_l4_sp_clk_hz;
-extern u32 cm_l4_mp_clk_hz;
+unsigned int cm_get_mmc_controller_clk_hz(void);
 #endif
 
 struct socfpga_clock_manager_main_pll {
