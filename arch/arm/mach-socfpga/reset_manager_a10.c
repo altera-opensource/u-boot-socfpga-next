@@ -21,6 +21,30 @@ static const struct socfpga_reset_manager *reset_manager_base =
 static const struct socfpga_system_manager *system_manager_base =
 		(void *)SOCFPGA_SYSMGR_ADDRESS;
 
+/* Assert or de-assert SoCFPGA reset manager reset. */
+void socfpga_per_reset(u32 reset, int set)
+{
+	const void *reg;
+
+	if (RSTMGR_BANK(reset) == 0)
+		reg = &reset_manager_base->mpu_mod_reset;
+	else if (RSTMGR_BANK(reset) == 1)
+		reg = &reset_manager_base->per0_mod_reset;
+	else if (RSTMGR_BANK(reset) == 2)
+		reg = &reset_manager_base->per1_mod_reset;
+	else if (RSTMGR_BANK(reset) == 3)
+		reg = &reset_manager_base->brg_mod_reset;
+	else if (RSTMGR_BANK(reset) == 4)
+		reg = &reset_manager_base->sys_mod_reset;
+	else    /* Invalid reset register, do nothing */
+		return;
+
+	if (set)
+		setbits_le32(reg, 1 << RSTMGR_RESET(reset));
+	else
+		clrbits_le32(reg, 1 << RSTMGR_RESET(reset));
+}
+
 /* Release NOC ddr scheduler from reset */
 void reset_deassert_noc_ddr_scheduler(void)
 {
