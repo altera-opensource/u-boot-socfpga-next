@@ -7,52 +7,24 @@
 #ifndef __CONFIG_SOCFGPA_ARRIA10_H__
 #define __CONFIG_SOCFGPA_ARRIA10_H__
 
-#include <asm/arch/hardware.h>
-#include <asm/arch/clock_manager.h>
-
-#include <config_cmd_default.h>
+#include <asm/arch/socfpga_a10_base_addrs.h>
 
 #define CONFIG_SOCFPGA_ARRIA10
 #define CONFIG_SOCFPGA_COMMON 1
-/*
- * Device tree info
- */
-#define CONFIG_UBOOT_DTB_SIZE		(10 * 1024)
-#undef CONFIG_SEMIHOSTING
-/*
- * High level configuration
- */
-/* ARMv7 CPU Core */
-#define CONFIG_ARMV7
-/* SOCFPGA Specific function */
-#define CONFIG_SOCFPGA
-/* Support for IRQs - for ocram and SDRAM ECC */
-#define CONFIG_USE_IRQ
-/* Enable early stage initialization at C environment */
+
 #define CONFIG_BOARD_EARLY_INIT_F
-/* miscellaneous platform dependent initialisations */
 #define CONFIG_MISC_INIT_R
 /* Enable board late init for ECC setup if IRQ enabled */
 #define CONFIG_BOARD_LATE_INIT
 
 /* Cache options */
-#ifdef TEST_AT_ASIMOV
-#undef  CONFIG_SYS_DCACHE_OFF
-#else
-#define CONFIG_SYS_DCACHE_OFF
-#endif
 #define CONFIG_CMD_CACHE
 #define CONFIG_SYS_CACHELINE_SIZE	32
 #define CONFIG_SYS_L2_PL310
 #define CONFIG_SYS_PL310_BASE		SOCFPGA_MPUL2_ADDRESS
 
 /* base address for .text section. Ensure located start of OCRAM */
-#ifdef TEST_AT_ASIMOV
-/*#define CONFIG_SYS_TEXT_BASE		0xc0040000*/
-#define CONFIG_SYS_TEXT_BASE		0x10000000
-#else
 #define CONFIG_SYS_TEXT_BASE		0xFFE00000
-#endif
 /* using linker to check all image sections fit OCRAM */
 #define CONFIG_SYS_LDSCRIPT		$(TOPDIR)/$(CPUDIR)/$(SOC)/u-boot.lds
 #define CONFIG_U_BOOT_BINARY_MAX_SIZE	(200 * 1024)
@@ -147,25 +119,6 @@
 #undef CONFIG_MD5
 
 #define CONFIG_CMD_MII
-
-/*
- * Security support
- */
-#if 0
-#define CONFIG_RSA
-#define CONFIG_FIT
-#define CONFIG_FIT_SIGNATURE
-/* enable fit_format_{error,warning}() */
-#define CONFIG_FIT_VERBOSE
-
-/*
- * Hash command support
- */
-#define CONFIG_CMD_HASH
-#define CONFIG_CMD_SHA1SUM
-#define CONFIG_HASH_VERIFY
-#define CONFIG_SHA1
-#endif
 
 /*
  * Misc
@@ -400,15 +353,9 @@
 /* reload value when timer count to zero */
 #define TIMER_LOAD_VAL			0xFFFFFFFF
 /* Clocks source frequency to timer */
-#ifdef TEST_AT_ASIMOV
-/* Preloader and U-Boot need to know the clock source frequency from handoff*/
-#define CONFIG_TIMER_CLOCK_KHZ		(CONFIG_HPS_CLK_OSC1_HZ / 1000)
-#define CONFIG_SYS_TIMER_RATE		(CONFIG_HPS_CLK_OSC1_HZ)
-#else
 #define CONFIG_TIMER_CLOCK_HZ		(100000000)
 #define CONFIG_TIMER_CLOCK_KHZ		(CONFIG_TIMER_CLOCK_HZ/1000)
 #define CONFIG_SYS_TIMER_RATE		(100000000)
-#endif
 /* DesignWare timer is a countdown timer */
 #define CONFIG_SYS_TIMER_COUNTS_DOWN
 
@@ -445,9 +392,6 @@
 #define CONFIG_DW_AUTONEG
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_MICREL
-#ifdef TEST_AT_ASIMOV
-#define CONFIG_PHY_MICREL_KSZ9021
-#endif
 /* phy */
 #define CONFIG_EPHY0_PHY_ADDR		7
 #endif	/* CONFIG_DESIGNWARE_ETH */
