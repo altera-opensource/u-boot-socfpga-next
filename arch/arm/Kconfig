@@ -494,9 +494,9 @@ config RMOBILE
 config ARCH_SOCFPGA
 	bool "Altera SOCFPGA family"
 	select CPU_V7
-	select SUPPORT_SPL
+	select SUPPORT_SPL if !TARGET_SOCFPGA_ARRIA10
 	select OF_CONTROL
-	select SPL_OF_CONTROL
+	select SPL_OF_CONTROL if !TARGET_SOCFPGA_ARRIA10
 	select DM
 	select DM_SPI_FLASH
 	select DM_SPI
