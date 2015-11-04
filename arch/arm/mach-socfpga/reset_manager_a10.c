@@ -6,14 +6,12 @@
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch/reset_manager.h>
-#include <asm/arch/system_manager.h>
-#include <asm/arch/fpga_manager.h>
+#include <asm/arch/reset_manager_a10.h>
+#include <asm/arch/system_manager_a10.h>
+#include <asm/arch/fpga_manager_a10.h>
 #include <fdtdec.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-
-unsigned long rst_mgr_status;
 
 static const struct socfpga_reset_manager *reset_manager_base =
 		(void *)SOCFPGA_RSTMGR_ADDRESS;
