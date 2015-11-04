@@ -6,18 +6,18 @@
 #
 # SPDX-License-Identifier:	GPL-2.0+
 #
-ifneq ($(CONFIG_SOCFPGA_ARRIA10),n)
+ifneq ($(CONFIG_TARGET_SOCFPGA_ARRIA10),y)
 obj-y	+= misc.o timer.o reset_manager.o system_manager.o clock_manager.o \
 	   fpga_manager.o scan_manager.o
 obj-$(CONFIG_SPL_BUILD) += spl.o freeze_controller.o
-else
-obj-y	+=
-endif
-
 # QTS-generated config file wrappers
 obj-y	+= wrap_pll_config.o
 obj-$(CONFIG_SPL_BUILD) += wrap_iocsr_config.o wrap_pinmux_config.o	\
 			   wrap_sdram_config.o
+else
+obj-y	+= arria10/
+endif
+
 CFLAGS_wrap_iocsr_config.o	+= -I$(srctree)/board/$(BOARDDIR)
 CFLAGS_wrap_pinmux_config.o	+= -I$(srctree)/board/$(BOARDDIR)
 CFLAGS_wrap_pll_config.o	+= -I$(srctree)/board/$(BOARDDIR)
