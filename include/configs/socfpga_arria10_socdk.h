@@ -9,14 +9,6 @@
 
 #include <asm/arch/socfpga_a10_base_addrs.h>
 
-#define CONFIG_SOCFPGA_ARRIA10
-#define CONFIG_SOCFPGA_COMMON 1
-
-#define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_MISC_INIT_R
-/* Enable board late init for ECC setup if IRQ enabled */
-#define CONFIG_BOARD_LATE_INIT
-
 /* Cache options */
 #define CONFIG_CMD_CACHE
 #define CONFIG_SYS_CACHELINE_SIZE	32
@@ -26,7 +18,6 @@
 /* base address for .text section. Ensure located start of OCRAM */
 #define CONFIG_SYS_TEXT_BASE		0xFFE00000
 /* using linker to check all image sections fit OCRAM */
-#define CONFIG_SYS_LDSCRIPT		$(TOPDIR)/$(CPUDIR)/$(SOC)/u-boot.lds
 #define CONFIG_U_BOOT_BINARY_MAX_SIZE	(200 * 1024)
 
 /*
@@ -53,6 +44,8 @@
 #define CONFIG_DISPLAY_BOARDINFO
 #define CONFIG_DISPLAY_BOARDINFO_LATE
 
+#define CONFIG_ENV_IS_NOWHERE
+
 /*
  * Kernel Info
  */
@@ -63,61 +56,10 @@
 /* Initial Memory map size for Linux, minus 4k alignment for DFT blob */
 #define CONFIG_SYS_BOOTMAPSZ		(32 * 1024 * 1024)
 
-
-
-/*
- * Console setup
- */
-/* Monitor Command Prompt */
-#define CONFIG_SYS_PROMPT		"SOCFPGA_ARRIA10 # "
-
 /* EMAC controller and PHY used */
 #define CONFIG_EMAC_BASE		SOCFPGA_EMAC0_ADDRESS
 #define CONFIG_EPHY_PHY_ADDR		CONFIG_EPHY0_PHY_ADDR
 #define CONFIG_PHY_INTERFACE_MODE	PHY_INTERFACE_MODE_RGMII
-
-/*
- * No more SPLas we want to reduce to 3 stages
- */
-#undef CONFIG_SPL
-#undef CONFIG_SPL_FRAMEWORK
-
-/*
- * Command line configuration.
- */
-/* #define CONFIG_SYS_NO_FLASH */
-/* FAT file system support */
-
-
-/*
- * Remove the U-Boot unused feature so can make U-Boot smaller
- * TODO: standardized for Asimov so Asimov can boot faster too
- */
-#define CONFIG_SYS_THUMB_BUILD
-#undef CONFIG_CMD_EXT2
-#undef CONFIG_GZIP
-#undef CONFIG_ZLIB
-#undef CONFIG_CMD_LOADB
-#undef CONFIG_CMD_LOADS
-#undef CONFIG_CMD_SETGETDCR
-#undef CONFIG_CMD_XIMG
-#undef CONFIG_CMD_ITEST
-#undef CONFIG_CMD_EXT2
-#undef CONFIG_CMD_MTDPARTS
-#undef CONFIG_CMD_BOOTD
-#undef CONFIG_CMD_IMLS
-#undef CONFIG_CMD_SDRAM
-#undef CONFIG_BOOTM_VXWORKS
-#undef CONFIG_CMD_NFS
-#undef CONFIG_BOOTM_NETBSD
-#undef CONFIG_BOOTM_PLAN9
-#undef CONFIG_BOOTM_RTEMS
-#undef CONFIG_BOOTM_VXWORKS
-/*#undef CONFIG_CMD_BOOTM*/
-#undef CONFIG_CMD_CONSOLE
-#undef CONFIG_CMD_EXPORTENV
-#undef CONFIG_MD5
-
 #define CONFIG_CMD_MII
 
 /*
@@ -146,24 +88,11 @@
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
-#if !defined(CONFIG_CADENCE_QSPI)  &&  !defined(CONFIG_NAND_DENALI)
-#define CONFIG_MMC
-#endif
-
 /*
  * Can't poll in semihosting; so turn off automatic boot command
  */
-#ifdef CONFIG_SEMIHOSTING
-#define CONFIG_BOOTCOMMAND ""
-#elif defined(CONFIG_MMC)
 #define CONFIG_BOOTCOMMAND "run callscript; run mmcload;" \
 	"run set_initswstate; run mmcboot"
-#elif defined(CONFIG_CADENCE_QSPI)
-#define CONFIG_BOOTCOMMAND "run qspiload;" \
-	"run set_initswstate; run qspiboot"
-#else
-#error "unsported configuration"
-#endif
 
 /*
  * arguments passed to the bootz command. The value of
@@ -192,7 +121,6 @@
 	"qspiloadcs=0\0" \
 	"qspibootimageaddr=0x120000\0" \
 	"qspifdtaddr=0x100000\0" \
-	"qspirbfaddr=" __stringify(CONFIG_QSPI_RBF_ADDR) "\0" \
 	"qspiroot=/dev/mtdblock1\0" \
 	"qspirootfstype=jffs2\0" \
 	"nandbootimageaddr=0x120000\0" \
@@ -332,7 +260,7 @@
 #define CONFIG_CONS_INDEX               1
 #define CONFIG_SYS_NS16550_COM1		SOCFPGA_UART1_ADDRESS
 #define CONFIG_SYS_BAUDRATE_TABLE {4800, 9600, 19200, 38400, 57600, 115200}
-#define CONFIG_SYS_NS16550_CLK		(cm_l4_sp_clk_hz)
+#define CONFIG_SYS_NS16550_CLK		10000000
 
 #define CONFIG_BAUDRATE			115200
 #endif /* CONFIG_SYS_NS16550 */
@@ -377,11 +305,8 @@
  */
 #define CONFIG_DESIGNWARE_ETH
 #ifdef CONFIG_DESIGNWARE_ETH
-#define CONFIG_TX_DESCR_NUM		2
-#define CONFIG_RX_DESCR_NUM		2
 /* console support for network */
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_NET
 #define CONFIG_CMD_PING
 /* designware */
 #define CONFIG_NET_MULTI
@@ -436,36 +361,6 @@
 #endif	/* CONFIG_MMC */
 
 /*
- * QSPI support
- */
-#define CONFIG_CQSPI_BASE		(SOCFPGA_QSPIREGS_ADDRESS)
-#define CONFIG_CQSPI_AHB_BASE		(SOCFPGA_QSPIDATA_ADDRESS)
-#ifdef CONFIG_CADENCE_QSPI
-#define CONFIG_ENV_IS_NOWHERE
-#define CONFIG_QSPI_RBF_ADDR 		0x720000
-#define CONFIG_SPI_FLASH		/* SPI flash subsystem */
-#define CONFIG_SPI_FLASH_STMICRO	/* Micron/Numonyx flash */
-#define CONFIG_SPI_FLASH_SPANSION	/* Spansion flash */
-#define CONFIG_SPI_FLASH_BAR		/* Enable access > 16MiB */
-#define CONFIG_CMD_SF			/* Serial flash commands */
-/* Flash device info */
-#define CONFIG_SF_DEFAULT_SPEED		(50000000)
-#define CONFIG_SF_DEFAULT_MODE		SPI_MODE_3
-#define CONFIG_SPI_FLASH_QUAD		(1)
-/* QSPI reference clock */
-#define CONFIG_CQSPI_REF_CLK		(cm_l4_main_clk_hz)
-/* QSPI page size and block size */
-#define CONFIG_CQSPI_PAGE_SIZE		(256)
-#define CONFIG_CQSPI_BLOCK_SIZE		(16)
-/* QSPI Delay timing */
-#define CONFIG_CQSPI_TSHSL_NS		(200)
-#define CONFIG_CQSPI_TSD2D_NS		(255)
-#define CONFIG_CQSPI_TCHSH_NS		(20)
-#define CONFIG_CQSPI_TSLCH_NS		(20)
-#define CONFIG_CQSPI_DECODER		(0)
-#endif	/* CONFIG_CADENCE_QSPI */
-
-/*
  * NAND
  */
 #ifdef CONFIG_NAND_DENALI
@@ -492,7 +387,6 @@
 /* Only support single device */
 #define CONFIG_FPGA_COUNT		(1)
 /* Enable FPGA command at console */
-#define CONFIG_CMD_FPGA
 #define CONFIG_CMD_FPGA_LOADFS
 
 /*
@@ -518,9 +412,6 @@
  * DMA support
  */
 #define CONFIG_PL330_DMA
-
-#define CONFIG_SYS_GENERIC_BOARD
-
 
 /*
  * I2C support
