@@ -9,7 +9,6 @@
 #include <asm/io.h>
 #include <asm/arch/fpga_manager.h>
 #include <asm/arch/reset_manager.h>
-#include <asm/arch/misc.h>
 #include <fat.h>
 #include <fs.h>
 #include <mmc.h>
@@ -40,7 +39,9 @@ const char *get_cff_filename(const void *fdt, int *len)
 /* read the first chunk of the file off the fat */
 static int read_rbf_header_from_fat(char *dev_part, const char *filename, u32 *temp, u32 size_of_temp)
 {
-	u32 filesize, bytesread, readsize;
+	int ret;
+	loff_t filesize;
+	u32 bytesread, readsize;
 
 	/* we are looking at the FAT partition */
 	if (fs_set_blk_dev("mmc", dev_part, FS_TYPE_FAT)) {
@@ -49,8 +50,8 @@ static int read_rbf_header_from_fat(char *dev_part, const char *filename, u32 *t
 	}
 
 	/* checking the size of the file */
-	filesize = fs_size(filename);
-	if (filesize == -1) {
+	ret = fs_size(filename, &filesize);
+	if (ret) {
 		printf("Error - %s not found within SDMMC\n", filename);
 		return -2;
 	}
@@ -62,7 +63,7 @@ static int read_rbf_header_from_fat(char *dev_part, const char *filename, u32 *t
 	else
 		readsize = size_of_temp;
 
-	bytesread = file_fat_read_at(filename, 0, temp, readsize);
+	bytesread = file_fat_read(filename, temp, readsize);
 	if (bytesread != readsize) {
 		printf("read_rbf_header_from_fat: failed to read %s %d != %d\n",
 			filename, bytesread, readsize);
@@ -76,7 +77,8 @@ static int read_rbf_header_from_fat(char *dev_part, const char *filename, u32 *t
 
 static int to_fpga_from_fat(char *dev_part, const char *filename, u32 *temp, u32 size_of_temp)
 {
-	u32 filesize, readsize, bytesread, offset = 0;
+	loff_t filesize, actread;
+	u32 readsize, bytesread, offset = 0;
 
 	/* we are looking at the FAT partition */
 	if (fs_set_blk_dev("mmc", dev_part, FS_TYPE_FAT)) {
@@ -85,7 +87,7 @@ static int to_fpga_from_fat(char *dev_part, const char *filename, u32 *temp, u32
 	}
 
 	/* checking the size of the file */
-	filesize = fs_size(filename);
+	filesize = fs_size(filename, &filesize);
 	if (filesize == -1) {
 		printf("Error - %s not found within SDMMC\n", filename);
 		return 1;
@@ -103,7 +105,8 @@ static int to_fpga_from_fat(char *dev_part, const char *filename, u32 *temp, u32
 		else
 			readsize = size_of_temp;
 
-		bytesread = file_fat_read_at(filename, offset, temp, readsize);
+		bytesread = file_fat_read_at(filename, offset, temp, readsize,
+					     &actread);
 		if (bytesread != readsize) {
 			printf("failed to read %s at offset %d %d != %d\n",
 				filename, offset, bytesread, readsize);
