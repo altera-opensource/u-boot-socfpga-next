@@ -7,10 +7,10 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/sections.h>
-#include <asm/arch/reset_manager.h>
-#include <asm/arch/system_manager.h>
+#include <asm/arch/reset_manager_a10.h>
+#include <asm/arch/system_manager_a10.h>
 #include <asm/arch/interrupts.h>
-#include <asm/arch/sdram.h>
+#include <asm/arch/sdram_a10.h>
 #include <asm/arch/dwmmc.h>
 #include <altera.h>
 #include <dwmmc.h>

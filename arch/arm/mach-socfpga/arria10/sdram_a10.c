@@ -12,12 +12,11 @@
 #include <ns16550.h>
 #include <pl330.h>
 #include <asm/io.h>
-#include <asm/arch/cff.h>
-#include <asm/arch/misc.h>
-#include <asm/arch/reset_manager.h>
-#include <asm/arch/fpga_manager.h>
-#include <asm/arch/sdram.h>
-#include <asm/arch/system_manager.h>
+#include <asm/arch/cff_a10.h>
+#include <asm/arch/reset_manager_a10.h>
+#include <asm/arch/fpga_manager_a10.h>
+#include <asm/arch/sdram_a10.h>
+#include <asm/arch/system_manager_a10.h>
 
 
 DECLARE_GLOBAL_DATA_PTR;
