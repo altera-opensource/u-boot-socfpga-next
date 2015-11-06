@@ -12,6 +12,7 @@ extern unsigned long irq_cnt_ecc_sdram;
 #ifndef __ASSEMBLY__
 
 void irq_handler_ecc_sdram(void *arg);
+int is_external_fpga_config(const void *blob);
 void sdram_enable_interrupt(unsigned enable);
 void sdram_mmr_init(void);
 void sdram_firewall_setup(void);
@@ -84,6 +85,21 @@ struct socfpga_noc_ddr_scheduler {
 	u32 _pad_0x20_0x34[8];
 	u32 ddr_t_main_scheduler_activate;
 	u32 ddr_t_main_scheduler_devtodev;
+};
+
+/*
+ * OCRAM firewall
+ */
+struct socfpga_noc_fw_ocram {
+	u32 enable;
+	u32 enable_set;
+	u32 enable_clear;
+	u32 region0;
+	u32 region1;
+	u32 region2;
+	u32 region3;
+	u32 region4;
+	u32 region5;
 };
 
 /* for master such as MPU and FPGA */
