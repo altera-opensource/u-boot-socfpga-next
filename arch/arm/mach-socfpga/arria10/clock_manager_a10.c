@@ -42,7 +42,7 @@ static inline void cm_wait4fsm(void)
 static u32 cm_get_main_vco(void)
 {
 	u32 vco1, src_hz, numer, denom, vco;
-	u32 clk_src = readl(&clock_manager_base->main_pll_vco0);
+	u32 clk_src = readl(&clock_manager_base->main_pll.vco0);
 
 	clk_src = (clk_src >> CLKMGR_MAINPLL_VCO0_PSRC_LSB) &
 		CLKMGR_MAINPLL_VCO0_PSRC_MSK;
@@ -57,7 +57,7 @@ static u32 cm_get_main_vco(void)
 		printf("cm_get_main_vco invalid clk_src %d\n", clk_src);
 		return 0;
 	}
-	vco1 = readl(&clock_manager_base->main_pll_vco1);
+	vco1 = readl(&clock_manager_base->main_pll.vco1);
 	numer = vco1 & CLKMGR_MAINPLL_VCO1_NUMER_MSK;
 	denom = (vco1 >> CLKMGR_MAINPLL_VCO1_DENOM_LSB) &
 			CLKMGR_MAINPLL_VCO1_DENOM_MSK;
@@ -71,7 +71,7 @@ static u32 cm_get_main_vco(void)
 static u32 cm_get_peri_vco(void)
 {
 	u32 vco1, src_hz, numer, denom, vco;
-	u32 clk_src = readl(&clock_manager_base->per_pll_vco0);
+	u32 clk_src = readl(&clock_manager_base->per_pll.vco0);
 
 	clk_src = (clk_src >> CLKMGR_PERPLL_VCO0_PSRC_LSB) &
 		CLKMGR_PERPLL_VCO0_PSRC_MSK;
@@ -84,13 +84,13 @@ static u32 cm_get_peri_vco(void)
 		src_hz = f2s_free_hz;
 	} else if (clk_src == CLKMGR_PERPLL_VCO0_PSRC_MAIN) {
 		src_hz = cm_get_main_vco();
-		src_hz /= (readl(&clock_manager_base->main_pll_cntr15clk) &
+		src_hz /= (readl(&clock_manager_base->main_pll.cntr15clk) &
 			CLKMGR_MAINPLL_CNTRCLK_MSK) + 1;
 	} else {
 		printf("cm_get_per_vco invalid clk_src %d\n", clk_src);
 		return 0;
 	}
-	vco1 = readl(&clock_manager_base->per_pll_vco1);
+	vco1 = readl(&clock_manager_base->per_pll.vco1);
 	numer = vco1 & CLKMGR_PERPLL_VCO1_NUMER_MSK;
 	denom = (vco1 >> CLKMGR_PERPLL_VCO1_DENOM_LSB) &
 			CLKMGR_PERPLL_VCO1_DENOM_MSK;
@@ -105,10 +105,10 @@ static u32 cm_get_l4_noc_hz(u32 nocdivshift)
 {
 	u32 clk_src, dividor, nocclk, src_hz;
 	u32 dividor2 = 1 <<
-		((readl(&clock_manager_base->main_pll_nocdiv) >>
+		((readl(&clock_manager_base->main_pll.nocdiv) >>
 			nocdivshift) & CLKMGR_MAINPLL_NOCDIV_MSK);
 
-	nocclk = readl(&clock_manager_base->main_pll_nocclk);
+	nocclk = readl(&clock_manager_base->main_pll.nocclk);
 	clk_src = (nocclk >> CLKMGR_MAINPLL_NOCCLK_SRC_LSB) &
 		CLKMGR_MAINPLL_NOCCLK_SRC_MSK;
 
@@ -140,20 +140,20 @@ static u32 cm_get_l4_noc_hz(u32 nocdivshift)
 unsigned int cm_get_mmc_controller_clk_hz(void)
 {
 	u32 clk_hz = 0;
-	u32 clk_input = readl(&clock_manager_base->per_pll_cntr6clk);
+	u32 clk_input = readl(&clock_manager_base->per_pll.cntr6clk);
 	clk_input = (clk_input >> CLKMGR_PERPLL_CNTR6CLK_SRC_LSB) &
 		CLKMGR_PERPLLGRP_SRC_MSK;
 
 	switch (clk_input) {
 	case CLKMGR_PERPLLGRP_SRC_MAIN:
 		clk_hz = cm_get_main_vco();
-		clk_hz /= 1 + (readl(&clock_manager_base->main_pll_cntr6clk) &
+		clk_hz /= 1 + (readl(&clock_manager_base->main_pll.cntr6clk) &
 			CLKMGR_MAINPLL_CNTRCLK_MSK);
 		break;
 
 	case CLKMGR_PERPLLGRP_SRC_PERI:
 		clk_hz = cm_get_peri_vco();
-		clk_hz /= 1 + (readl(&clock_manager_base->per_pll_cntr6clk) &
+		clk_hz /= 1 + (readl(&clock_manager_base->per_pll.cntr6clk) &
 			CLKMGR_PERPLL_CNTRCLK_MSK);
 		break;
 
@@ -336,7 +336,7 @@ int of_get_clk_cfg(const void *blob, struct mainpll_cfg *main_cfg,
 
 	of_get_input_clks(blob);
 
-	node = fdtdec_next_compatible(blob, 0, COMPAT_ARRIA10_CLK_INIT);
+	node = fdtdec_next_compatible(blob, 0, COMPAT_ALTERA_SOCFPGA_A10_CLK_INIT);
 
 	if (node < 0)
 		return 1;
@@ -417,16 +417,16 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	/* gate off all mainpll clock excpet HW managed clock */
 	writel(CLKMGR_MAINPLL_EN_S2FUSER0CLKEN_SET_MSK |
 		CLKMGR_MAINPLL_EN_HMCPLLREFCLKEN_SET_MSK,
-		&clock_manager_base->main_pll_enr);
+		&clock_manager_base->main_pll.enr);
 
 	/* now we can gate off the rest of the peripheral clocks */
-	writel(0, &clock_manager_base->per_pll_en);
+	writel(0, &clock_manager_base->per_pll.en);
 
 	/* Put all plls in external bypass */
 	writel(CLKMGR_MAINPLL_BYPASS_RESET,
-		&clock_manager_base->main_pll_bypasss);
+		&clock_manager_base->main_pll.bypasss);
 	writel(CLKMGR_PERPLL_BYPASS_RESET,
-		&clock_manager_base->per_pll_bypasss);
+		&clock_manager_base->per_pll.bypasss);
 
 	/*
 	 * Put all plls VCO registers back to reset value.
@@ -440,25 +440,25 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 			CLKMGR_MAINPLL_VCO0_REGEXTSEL_SET_MSK |
 			(main_cfg->vco0_psrc <<
 				CLKMGR_MAINPLL_VCO0_PSRC_LSB),
-			&clock_manager_base->main_pll_vco0);
+			&clock_manager_base->main_pll.vco0);
 	} else {
 		/* secure clock always use int_osc */
 		writel(CLKMGR_MAINPLL_VCO0_RESET |
 			CLKMGR_MAINPLL_VCO0_REGEXTSEL_SET_MSK |
 			(CLKMGR_MAINPLL_VCO0_PSRC_E_INTOSC <<
 				CLKMGR_MAINPLL_VCO0_PSRC_LSB),
-			&clock_manager_base->main_pll_vco0);
+			&clock_manager_base->main_pll.vco0);
 	}
 	writel(CLKMGR_PERPLL_VCO0_RESET |
 		CLKMGR_PERPLL_VCO0_REGEXTSEL_SET_MSK |
 		(per_cfg->vco0_psrc <<
 			CLKMGR_PERPLL_VCO0_PSRC_LSB),
-		&clock_manager_base->per_pll_vco0);
+		&clock_manager_base->per_pll.vco0);
 
 	writel(CLKMGR_MAINPLL_VCO1_RESET,
-		&clock_manager_base->main_pll_vco1);
+		&clock_manager_base->main_pll.vco1);
 	writel(CLKMGR_PERPLL_VCO1_RESET,
-		&clock_manager_base->per_pll_vco1);
+		&clock_manager_base->per_pll.vco1);
 
 	/* clear the interrupt register status register */
 	writel(CLKMGR_CLKMGR_INTR_MAINPLLLOST_SET_MSK |
@@ -475,20 +475,20 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	writel((main_cfg->vco1_denom <<
 		CLKMGR_MAINPLL_VCO1_DENOM_LSB) |
 		main_cfg->vco1_numer,
-		&clock_manager_base->main_pll_vco1);
+		&clock_manager_base->main_pll.vco1);
 	writel((per_cfg->vco1_denom <<
 		CLKMGR_PERPLL_VCO1_DENOM_LSB) |
 		per_cfg->vco1_numer,
-		&clock_manager_base->per_pll_vco1);
+		&clock_manager_base->per_pll.vco1);
 
 	/* Wait for at least 5 us */
 	udelay(5);
 
 	/* Now deassert BGPWRDN and PWRDN */
-	clrbits_le32(&clock_manager_base->main_pll_vco0,
+	clrbits_le32(&clock_manager_base->main_pll.vco0,
 		CLKMGR_MAINPLL_VCO0_BGPWRDN_SET_MSK |
 		CLKMGR_MAINPLL_VCO0_PWRDN_SET_MSK);
-	clrbits_le32(&clock_manager_base->per_pll_vco0,
+	clrbits_le32(&clock_manager_base->per_pll.vco0,
 		CLKMGR_PERPLL_VCO0_BGPWRDN_SET_MSK |
 		CLKMGR_PERPLL_VCO0_PWRDN_SET_MSK);
 
@@ -496,14 +496,14 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	udelay(7);
 
 	/* enable the VCO and disable the external regulator to PLL */
-	writel((readl(&clock_manager_base->main_pll_vco0) &
+	writel((readl(&clock_manager_base->main_pll.vco0) &
 		~CLKMGR_MAINPLL_VCO0_REGEXTSEL_SET_MSK) |
 		CLKMGR_MAINPLL_VCO0_EN_SET_MSK,
-		&clock_manager_base->main_pll_vco0);
-	writel((readl(&clock_manager_base->per_pll_vco0) &
+		&clock_manager_base->main_pll.vco0);
+	writel((readl(&clock_manager_base->per_pll.vco0) &
 		~CLKMGR_PERPLL_VCO0_REGEXTSEL_SET_MSK) |
 		CLKMGR_PERPLL_VCO0_EN_SET_MSK,
-		&clock_manager_base->per_pll_vco0);
+		&clock_manager_base->per_pll.vco0);
 
 	/* setup all the main PLL counter and clock source */
 	writel(main_cfg->nocclk,
@@ -512,72 +512,72 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	       SOCFPGA_CLKMGR_ADDRESS + CLKMGR_ALTERAGRP_MPU_CLK_OFFSET);
 
 	/* main_emaca_clk divider */
-	writel(main_cfg->cntr2clk_cnt, &clock_manager_base->main_pll_cntr2clk);
+	writel(main_cfg->cntr2clk_cnt, &clock_manager_base->main_pll.cntr2clk);
 	/* main_emacb_clk divider */
-	writel(main_cfg->cntr3clk_cnt, &clock_manager_base->main_pll_cntr3clk);
+	writel(main_cfg->cntr3clk_cnt, &clock_manager_base->main_pll.cntr3clk);
 	/* main_emac_ptp_clk divider */
-	writel(main_cfg->cntr4clk_cnt, &clock_manager_base->main_pll_cntr4clk);
+	writel(main_cfg->cntr4clk_cnt, &clock_manager_base->main_pll.cntr4clk);
 	/* main_gpio_db_clk divider */
-	writel(main_cfg->cntr5clk_cnt, &clock_manager_base->main_pll_cntr5clk);
+	writel(main_cfg->cntr5clk_cnt, &clock_manager_base->main_pll.cntr5clk);
 	/* main_sdmmc_clk divider */
-	writel(main_cfg->cntr6clk_cnt, &clock_manager_base->main_pll_cntr6clk);
+	writel(main_cfg->cntr6clk_cnt, &clock_manager_base->main_pll.cntr6clk);
 	/* main_s2f_user0_clk divider */
 	writel(main_cfg->cntr7clk_cnt |
 		(main_cfg->cntr7clk_src <<
 			CLKMGR_MAINPLL_CNTR7CLK_SRC_LSB),
-		&clock_manager_base->main_pll_cntr7clk);
+		&clock_manager_base->main_pll.cntr7clk);
 	/* main_s2f_user1_clk divider */
-	writel(main_cfg->cntr8clk_cnt, &clock_manager_base->main_pll_cntr8clk);
+	writel(main_cfg->cntr8clk_cnt, &clock_manager_base->main_pll.cntr8clk);
 	/* main_hmc_pll_clk divider */
 	writel(main_cfg->cntr9clk_cnt |
 		(main_cfg->cntr9clk_src <<
 			CLKMGR_MAINPLL_CNTR9CLK_SRC_LSB),
-		&clock_manager_base->main_pll_cntr9clk);
+		&clock_manager_base->main_pll.cntr9clk);
 	/* main_periph_ref_clk divider */
 	writel(main_cfg->cntr15clk_cnt,
-		&clock_manager_base->main_pll_cntr15clk);
+		&clock_manager_base->main_pll.cntr15clk);
 
 	/* setup all the peripheral PLL counter and clock source */
 	/* peri_emaca_clk divider */
 	writel(per_cfg->cntr2clk_cnt |
 		(per_cfg->cntr2clk_src << CLKMGR_PERPLL_CNTR2CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr2clk);
+		&clock_manager_base->per_pll.cntr2clk);
 	/* peri_emacb_clk divider */
 	writel(per_cfg->cntr3clk_cnt |
 		(per_cfg->cntr3clk_src << CLKMGR_PERPLL_CNTR3CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr3clk);
+		&clock_manager_base->per_pll.cntr3clk);
 	/* peri_emac_ptp_clk divider */
 	writel(per_cfg->cntr4clk_cnt |
 		(per_cfg->cntr4clk_src << CLKMGR_PERPLL_CNTR4CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr4clk);
+		&clock_manager_base->per_pll.cntr4clk);
 	/* peri_gpio_db_clk divider */
 	writel(per_cfg->cntr5clk_cnt |
 		(per_cfg->cntr5clk_src << CLKMGR_PERPLL_CNTR5CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr5clk);
+		&clock_manager_base->per_pll.cntr5clk);
 	/* peri_sdmmc_clk divider */
 	writel(per_cfg->cntr6clk_cnt |
 		(per_cfg->cntr6clk_src << CLKMGR_PERPLL_CNTR6CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr6clk);
+		&clock_manager_base->per_pll.cntr6clk);
 	/* peri_s2f_user0_clk divider */
-	writel(per_cfg->cntr7clk_cnt, &clock_manager_base->per_pll_cntr7clk);
+	writel(per_cfg->cntr7clk_cnt, &clock_manager_base->per_pll.cntr7clk);
 	/* peri_s2f_user1_clk divider */
 	writel(per_cfg->cntr8clk_cnt |
 		(per_cfg->cntr8clk_src << CLKMGR_PERPLL_CNTR8CLK_SRC_LSB),
-		&clock_manager_base->per_pll_cntr8clk);
+		&clock_manager_base->per_pll.cntr8clk);
 	/* peri_hmc_pll_clk divider */
 	writel(per_cfg->cntr9clk_cnt,
-		&clock_manager_base->per_pll_cntr9clk);
+		&clock_manager_base->per_pll.cntr9clk);
 
 	/* setup all the external PLL counter */
 	/* mpu wrapper / external divider */
 	writel(main_cfg->mpuclk_cnt |
 		(main_cfg->mpuclk_src <<
 			CLKMGR_MAINPLL_MPUCLK_SRC_LSB),
-		&clock_manager_base->main_pll_mpuclk);
+		&clock_manager_base->main_pll.mpuclk);
 	/* NOC wrapper / external divider */
 	writel(main_cfg->nocclk_cnt |
 		(main_cfg->nocclk_src << CLKMGR_MAINPLL_NOCCLK_SRC_LSB),
-		&clock_manager_base->main_pll_nocclk);
+		&clock_manager_base->main_pll.nocclk);
 	/* NOC subclock divider such as l4 */
 	writel(main_cfg->nocdiv_l4mainclk |
 		(main_cfg->nocdiv_l4mpclk <<
@@ -590,9 +590,9 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 			CLKMGR_MAINPLL_NOCDIV_CSTRACECLK_LSB) |
 		(main_cfg->nocdiv_cspdbclk <<
 			CLKMGR_MAINPLL_NOCDIV_CSPDBGCLK_LSB),
-		&clock_manager_base->main_pll_nocdiv);
+		&clock_manager_base->main_pll.nocdiv);
 	/* gpio_db external divider */
-	writel(per_cfg->gpiodiv_gpiodbclk, &clock_manager_base->per_pll_gpiodiv);
+	writel(per_cfg->gpiodiv_gpiodbclk, &clock_manager_base->per_pll.gpiodiv);
 
 	/* setup the EMAC clock mux select */
 	writel((per_cfg->emacctl_emac0sel <<
@@ -601,7 +601,7 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 			CLKMGR_PERPLL_EMACCTL_EMAC1SEL_LSB) |
 		(per_cfg->emacctl_emac2sel <<
 			CLKMGR_PERPLL_EMACCTL_EMAC2SEL_LSB),
-		&clock_manager_base->per_pll_emacctl);
+		&clock_manager_base->per_pll.emacctl);
 
 	/* at this stage, check for PLL lock status */
 	cm_wait_for_lock(LOCKED_MASK);
@@ -611,28 +611,28 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	 * assert/deassert outresetall
 	 */
 	/* assert mainpll outresetall */
-	setbits_le32(&clock_manager_base->main_pll_vco0,
+	setbits_le32(&clock_manager_base->main_pll.vco0,
 		CLKMGR_MAINPLL_VCO0_OUTRSTALL_SET_MSK);
 	/* assert perpll outresetall */
-	setbits_le32(&clock_manager_base->per_pll_vco0,
+	setbits_le32(&clock_manager_base->per_pll.vco0,
 		CLKMGR_PERPLL_VCO0_OUTRSTALL_SET_MSK);
 	/* de-assert mainpll outresetall */
-	clrbits_le32(&clock_manager_base->main_pll_vco0,
+	clrbits_le32(&clock_manager_base->main_pll.vco0,
 		CLKMGR_MAINPLL_VCO0_OUTRSTALL_SET_MSK);
 	/* de-assert perpll outresetall */
-	clrbits_le32(&clock_manager_base->per_pll_vco0,
+	clrbits_le32(&clock_manager_base->per_pll.vco0,
 		CLKMGR_PERPLL_VCO0_OUTRSTALL_SET_MSK);
 
 	/* Take all PLLs out of bypass when boot mode is cleared. */
 	/* release mainpll from bypass */
 	writel(CLKMGR_MAINPLL_BYPASS_RESET,
-		&clock_manager_base->main_pll_bypassr);
+		&clock_manager_base->main_pll.bypassr);
 	/* wait till Clock Manager is not busy */
 	cm_wait4fsm();
 
 	/* release perpll from bypass */
 	writel(CLKMGR_PERPLL_BYPASS_RESET,
-		&clock_manager_base->per_pll_bypassr);
+		&clock_manager_base->per_pll.bypassr);
 	/* wait till Clock Manager is not busy */
 	cm_wait4fsm();
 
@@ -645,9 +645,9 @@ static int cm_full_cfg(struct mainpll_cfg *main_cfg, struct perpll_cfg *per_cfg)
 	/* Now ungate non-hw-managed clocks */
 	writel(CLKMGR_MAINPLL_EN_S2FUSER0CLKEN_SET_MSK |
 		CLKMGR_MAINPLL_EN_HMCPLLREFCLKEN_SET_MSK,
-		&clock_manager_base->main_pll_ens);
+		&clock_manager_base->main_pll.ens);
 	writel(CLKMGR_PERPLL_EN_RESET,
-		&clock_manager_base->per_pll_ens);
+		&clock_manager_base->per_pll.ens);
 
 	/* Clear the loss lock and slip bits as they might set during
 	clock reconfiguration */
@@ -666,9 +666,6 @@ int cm_basic_init(const void *blob)
 	struct mainpll_cfg main_cfg;
 	struct perpll_cfg per_cfg;
 	int rval;
-	u32 cm_l4_main_clk_hz;
-	u32 cm_l4_sp_clk_hz;
-	u32 cm_l4_mp_clk_hz;
 
 	/* initialize to zero for use case of optional node */
 	memset(&main_cfg, 0, sizeof(main_cfg));
@@ -678,16 +675,6 @@ int cm_basic_init(const void *blob)
 	}
 
 	rval =  cm_full_cfg(&main_cfg, &per_cfg);
-
-	cm_l4_main_clk_hz =
-		cm_get_l4_noc_hz(CLKMGR_MAINPLL_NOCDIV_L4MAINCLK_LSB);
-
-	cm_l4_mp_clk_hz =
-		cm_get_l4_noc_hz(CLKMGR_MAINPLL_NOCDIV_L4MPCLK_LSB);
-
-	cm_l4_sp_clk_hz =
-		cm_get_l4_noc_hz(CLKMGR_MAINPLL_NOCDIV_L4SPCLK_LSB);
-
 	return rval;
 }
 
