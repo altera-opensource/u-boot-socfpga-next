@@ -171,6 +171,14 @@ enum fdt_compat_id {
 	COMPAT_INTEL_IRQ_ROUTER,	/* Intel Interrupt Router */
 	COMPAT_ALTERA_SOCFPGA_DWMAC,	/* SoCFPGA Ethernet controller */
 	COMPAT_ALTERA_SOCFPGA_DWMMC,	/* SoCFPGA DWMMC controller */
+	COMPAT_ALTERA_SOCFPGA_A10_CLK_INIT,     /* SoCFPGA A10 Clock initialization */
+	COMPAT_ALTERA_SOCFPGA_A10_H2F_BRG,      /* SoCFPGA A10 hps2fpga bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_LWH2F_BRG,    /* SoCFPGA A10 lwhps2fpga bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_F2H_BRG,      /* SoCFPGA A10 fpga2hps bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_F2SDR0,       /* SoCFPGA A10 fpga2SDRAM0 bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_F2SDR1,       /* SoCFPGA A10 fpga2SDRAM1 bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_F2SDR2,       /* SoCFPGA A10 fpga2SDRAM2 bridge */
+	COMPAT_ALTERA_SOCFPGA_A10_NOC,  /* SoCFPGA A10 SDR NOC controller */
 	COMPAT_INTEL_BAYTRAIL_FSP,	/* Intel Bay Trail FSP */
 	COMPAT_INTEL_BAYTRAIL_FSP_MDP,	/* Intel FSP memory-down params */
 
