@@ -25,15 +25,15 @@ void socfpga_per_reset(u32 reset, int set)
 	const void *reg;
 
 	if (RSTMGR_BANK(reset) == 0)
-		reg = &reset_manager_base->mpu_mod_reset;
+		reg = &reset_manager_base->mpu_mod_rst;
 	else if (RSTMGR_BANK(reset) == 1)
-		reg = &reset_manager_base->per0_mod_reset;
+		reg = &reset_manager_base->per0_mod_rst;
 	else if (RSTMGR_BANK(reset) == 2)
-		reg = &reset_manager_base->per1_mod_reset;
+		reg = &reset_manager_base->per1_mod_rst;
 	else if (RSTMGR_BANK(reset) == 3)
-		reg = &reset_manager_base->brg_mod_reset;
+		reg = &reset_manager_base->brg_mod_rst;
 	else if (RSTMGR_BANK(reset) == 4)
-		reg = &reset_manager_base->sys_mod_reset;
+		reg = &reset_manager_base->sys_mod_rst;
 	else    /* Invalid reset register, do nothing */
 		return;
 
@@ -41,33 +41,6 @@ void socfpga_per_reset(u32 reset, int set)
 		setbits_le32(reg, 1 << RSTMGR_RESET(reset));
 	else
 		clrbits_le32(reg, 1 << RSTMGR_RESET(reset));
-}
-
-/* Release NOC ddr scheduler from reset */
-void reset_deassert_noc_ddr_scheduler(void)
-{
-	clrbits_le32(&reset_manager_base->brgmodrst,
-		ALT_RSTMGR_BRGMODRST_DDRSCH_SET_MSK);
-}
-
-/* Disable the watchdog (toggle reset to watchdog) */
-void watchdog_disable(void)
-{
-	/* assert reset for watchdog */
-	setbits_le32(&reset_manager_base->per1modrst,
-		ALT_RSTMGR_PER1MODRST_WD0_SET_MSK);
-}
-
-/* Check whether Watchdog in reset state? */
-int is_wdt_in_reset(void)
-{
-	unsigned long val;
-
-	val = readl(&reset_manager_base->per1modrst);
-	val &= ALT_RSTMGR_PER1MODRST_WD0_SET_MSK;
-
-	/* return 0x1 if watchdog in reset */
-	return val;
 }
 
 /* Write the reset manager register to cause reset */
@@ -82,43 +55,6 @@ void reset_cpu(ulong addr)
 	 */
 	while (1)
 		;
-}
-
-/* emacbase: base address of emac to enable/disable reset
- * state: 0 - disable reset, !0 - enable reset
- */
-void emac_manage_reset(ulong emacbase, uint state)
-{
-	ulong eccmask;
-	ulong emacmask;
-	switch (emacbase) {
-	case SOCFPGA_EMAC0_ADDRESS:
-		eccmask = ALT_RSTMGR_PER0MODRST_EMACECC0_SET_MSK;
-		emacmask = ALT_RSTMGR_PER0MODRST_EMAC0_SET_MSK;
-		break;
-	case SOCFPGA_EMAC1_ADDRESS:
-		eccmask = ALT_RSTMGR_PER0MODRST_EMACECC1_SET_MSK;
-		emacmask = ALT_RSTMGR_PER0MODRST_EMAC1_SET_MSK;
-		break;
-	case SOCFPGA_EMAC2_ADDRESS:
-		eccmask = ALT_RSTMGR_PER0MODRST_EMACECC2_SET_MSK;
-		emacmask = ALT_RSTMGR_PER0MODRST_EMAC2_SET_MSK;
-		break;
-	default:
-		error("emac base address unexpected! %lx", emacbase);
-		hang();
-		break;
-	}
-
-	if (state) {
-		/* Enable ECC OCP first */
-		setbits_le32(&reset_manager_base->per0modrst, eccmask);
-		setbits_le32(&reset_manager_base->per0modrst, emacmask);
-	} else {
-		/* Disable ECC OCP first */
-		clrbits_le32(&reset_manager_base->per0modrst, emacmask);
-		clrbits_le32(&reset_manager_base->per0modrst, eccmask);
-	}
 }
 
 /* Disable all the bridges (hps2fpga, lwhps2fpga, fpga2hps, fpga2sdram) */
@@ -158,7 +94,7 @@ void reset_assert_all_bridges(void)
 		;
 
 	/* Put all bridges (except NOR DDR scheduler) into reset state */
-	setbits_le32(&reset_manager_base->brgmodrst,
+	setbits_le32(&reset_manager_base->brg_mod_rst,
 		(ALT_RSTMGR_BRGMODRST_H2F_SET_MSK |
 		ALT_RSTMGR_BRGMODRST_LWH2F_SET_MSK |
 		ALT_RSTMGR_BRGMODRST_F2H_SET_MSK |
@@ -191,32 +127,32 @@ struct bridge_cfg {
 
 static const struct bridge_cfg bridge_cfg_tbl[] = {
 	{
-		COMPAT_ARRIA10_H2F_BRG,
+		COMPAT_ALTERA_SOCFPGA_A10_H2F_BRG,
 		ALT_SYSMGR_NOC_H2F_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_H2F_SET_MSK,
 	},
 	{
-		COMPAT_ARRIA10_LWH2F_BRG,
+		COMPAT_ALTERA_SOCFPGA_A10_LWH2F_BRG,
 		ALT_SYSMGR_NOC_LWH2F_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_LWH2F_SET_MSK,
 	},
 	{
-		COMPAT_ARRIA10_F2H_BRG,
+		COMPAT_ALTERA_SOCFPGA_A10_F2H_BRG,
 		ALT_SYSMGR_NOC_F2H_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_F2H_SET_MSK,
 	},
 	{
-		COMPAT_ARRIA10_F2SDR0,
+		COMPAT_ALTERA_SOCFPGA_A10_F2SDR0,
 		ALT_SYSMGR_NOC_F2SDR0_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_F2SSDRAM0_SET_MSK,
 	},
 	{
-		COMPAT_ARRIA10_F2SDR1,
+		COMPAT_ALTERA_SOCFPGA_A10_F2SDR1,
 		ALT_SYSMGR_NOC_F2SDR1_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_F2SSDRAM1_SET_MSK,
 	},
 	{
-		COMPAT_ARRIA10_F2SDR2,
+		COMPAT_ALTERA_SOCFPGA_A10_F2SDR2,
 		ALT_SYSMGR_NOC_F2SDR2_SET_MSK,
 		ALT_RSTMGR_BRGMODRST_F2SSDRAM2_SET_MSK,
 	},
@@ -240,7 +176,7 @@ void reset_deassert_bridges_handoff(void)
 	setbits_le32(&system_manager_base->noc_idlereq_clr, mask_noc);
 
 	/* Release bridges from reset state per handoff value */
-	clrbits_le32(&reset_manager_base->brgmodrst, mask_rstmgr);
+	clrbits_le32(&reset_manager_base->brg_mod_rst, mask_rstmgr);
 
 	/* Poll until all idleack to 0 */
 	while (readl(&system_manager_base->noc_idleack) & mask_noc)
@@ -263,11 +199,11 @@ void reset_assert_all_peripherals_except_l4wd0_l4timer0(void)
 	/* disable all components except ECC_OCP, L4 Timer0 and L4 WD0 */
 	writel(~(ALT_RSTMGR_PER1MODRST_WD0_SET_MSK |
 	       ALT_RSTMGR_PER1MODRST_L4SYSTMR0_SET_MSK),
-	       &reset_manager_base->per1modrst);
-	setbits_le32(&reset_manager_base->per0modrst, ~mask_ecc_ocp);
+	       &reset_manager_base->per1_mod_rst);
+	setbits_le32(&reset_manager_base->per0_mod_rst, ~mask_ecc_ocp);
 
 	/* Finally disable the ECC_OCP */
-	setbits_le32(&reset_manager_base->per0modrst, mask_ecc_ocp);
+	setbits_le32(&reset_manager_base->per0_mod_rst, mask_ecc_ocp);
 }
 
 #define ECC_MASK (ALT_RSTMGR_PER0MODRST_EMACECC0_SET_MSK|\
@@ -290,13 +226,11 @@ void reset_deassert_dedicated_peripherals(void)
 	mask |= ALT_RSTMGR_PER0MODRST_QSPIECC_SET_MSK;
 #elif defined(CONFIG_NAND_DENALI)
 	mask |= ALT_RSTMGR_PER0MODRST_NANDECC_SET_MSK;
-#else
-#error "unsupported dedicated peripherals"
 #endif
 	mask |= ALT_RSTMGR_PER0MODRST_DMAECC_SET_MSK;
 
 	/* enable ECC OCP first */
-	clrbits_le32(&reset_manager_base->per0modrst, mask);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask);
 
 	mask = 0;
 #if defined(CONFIG_MMC)
@@ -305,12 +239,10 @@ void reset_deassert_dedicated_peripherals(void)
 	mask |= ALT_RSTMGR_PER0MODRST_QSPI_SET_MSK;
 #elif defined(CONFIG_NAND_DENALI)
 	mask |= ALT_RSTMGR_PER0MODRST_NAND_SET_MSK;
-#else
-#error "unsupported dedicated peripherals"
 #endif
 	mask |= ALT_RSTMGR_PER0MODRST_DMA_SET_MSK;
 
-	clrbits_le32(&reset_manager_base->per0modrst, mask);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask);
 
 	mask = ALT_RSTMGR_PER1MODRST_L4SYSTMR0_SET_MSK;
 
@@ -320,7 +252,7 @@ void reset_deassert_dedicated_peripherals(void)
 	mask |= ALT_RSTMGR_PER1MODRST_UART0_SET_MSK;
 #endif
 
-	clrbits_le32(&reset_manager_base->per1modrst, mask);
+	clrbits_le32(&reset_manager_base->per1_mod_rst, mask);
 
 	/* start with 4 as first 3 registers are reserved */
 	for (i = 4, pinmux_addr += (sizeof(u32) * (i - 1)); i <= 17;
@@ -365,9 +297,9 @@ void reset_deassert_dedicated_peripherals(void)
 			break;
 		}
 	}
-	clrbits_le32(&reset_manager_base->per0modrst, mask0 & ECC_MASK);
-	clrbits_le32(&reset_manager_base->per1modrst, mask1);
-	clrbits_le32(&reset_manager_base->per0modrst, mask0);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0 & ECC_MASK);
+	clrbits_le32(&reset_manager_base->per1_mod_rst, mask1);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0);
 
 }
 
@@ -380,7 +312,7 @@ void reset_assert_uart(void)
 	mask |= ALT_RSTMGR_PER1MODRST_UART0_SET_MSK;
 #endif
 
-	setbits_le32(&reset_manager_base->per1modrst, mask);
+	setbits_le32(&reset_manager_base->per1_mod_rst, mask);
 }
 
 void reset_deassert_uart(void)
@@ -392,7 +324,7 @@ void reset_deassert_uart(void)
 	mask |= ALT_RSTMGR_PER1MODRST_UART0_SET_MSK;
 #endif
 
-	clrbits_le32(&reset_manager_base->per1modrst, mask);
+	clrbits_le32(&reset_manager_base->per1_mod_rst, mask);
 }
 
 static const u32 per0fpgamasks[] = {
@@ -456,9 +388,9 @@ void reset_deassert_fpga_connected_peripherals(void)
 		fpga_pinux_addr += sizeof(u32);
 	}
 
-	clrbits_le32(&reset_manager_base->per0modrst, mask0 & ECC_MASK);
-	clrbits_le32(&reset_manager_base->per1modrst, mask1);
-	clrbits_le32(&reset_manager_base->per0modrst, mask0);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0 & ECC_MASK);
+	clrbits_le32(&reset_manager_base->per1_mod_rst, mask1);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0);
 }
 
 void reset_deassert_shared_connected_peripherals_q1(u32 *mask0, u32 *mask1,
@@ -730,14 +662,14 @@ void reset_deassert_shared_connected_peripherals(void)
 		ALT_RSTMGR_PER1MODRST_SPTMR0_SET_MSK |
 		ALT_RSTMGR_PER1MODRST_SPTMR1_SET_MSK;
 
-	clrbits_le32(&reset_manager_base->per0modrst, mask0 & ECC_MASK);
-	clrbits_le32(&reset_manager_base->per1modrst, mask1);
-	clrbits_le32(&reset_manager_base->per0modrst, mask0);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0 & ECC_MASK);
+	clrbits_le32(&reset_manager_base->per1_mod_rst, mask1);
+	clrbits_le32(&reset_manager_base->per0_mod_rst, mask0);
 }
 
 /* Release L4 OSC1 Watchdog Timer 0 from reset through reset manager */
 void reset_deassert_osc1wd0(void)
 {
-	clrbits_le32(&reset_manager_base->per1modrst,
+	clrbits_le32(&reset_manager_base->per1_mod_rst,
 		ALT_RSTMGR_PER1MODRST_WD0_SET_MSK);
 }
