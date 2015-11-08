@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#ifndef	_SOCFPGA_ECC_RAM_A10_H_
-#define	_SOCFPGA_ECC_RAM_A10_H_
+#ifndef	_SOCFPGA_ECC_RAM_H_
+#define	_SOCFPGA_ECC_RAM_H_
 
 #define IRQ_ECC_OCRAM_CORRECTED		210
 #define IRQ_ECC_OCRAM_UNCORRECTED	211
@@ -16,40 +16,40 @@ extern unsigned long irq_cnt_ecc_ocram_uncorrected;
 #ifndef __ASSEMBLY__
 
 struct socfpga_ecc {
-	u32 ip_rev_id;
-	u32 _pad_0x4_0x7;
-	u32 ctrl;
-	u32 initstat;
-	u32 errinten;
-	u32 errintens;
-	u32 errintenr;
-	u32 intmode;
-	u32 intstat;
-	u32 inttest;
-	u32 modstat;
-	u32 derraddra;
-	u32 serraddra;
-	u32 _pad_0x34_0x3b[2];
-	u32 serrcntreg;
-	u32 ecc_addrbus;
-	u32 ecc_rdata0bus;
-	u32 ecc_rdata1bus;
-	u32 ecc_rdata2bus;
-	u32 ecc_rdata3bus;
-	u32 ecc_wdata0bus;
-	u32 ecc_wdata1bus;
-	u32 ecc_wdata2bus;
-	u32 ecc_wdata3bus;
-	u32 ecc_rdataecc0bus;
-	u32 ecc_rdataecc1bus;
-	u32 ecc_wdataecc0bus;
-	u32 ecc_wdataecc1bus;
-	u32 ecc_dbytectrl;
-	u32 ecc_accctrl;
-	u32 ecc_startacc;
-	u32 ecc_wdctrl;
-	u32 _pad_0x84_0x8f[3];
-	u32 serrlkupa0;
+	volatile uint32_t  ip_rev_id;
+	volatile uint32_t  _pad_0x4_0x7;
+	volatile uint32_t  ctrl;
+	volatile uint32_t  initstat;
+	volatile uint32_t  errinten;
+	volatile uint32_t  errintens;
+	volatile uint32_t  errintenr;
+	volatile uint32_t  intmode;
+	volatile uint32_t  intstat;
+	volatile uint32_t  inttest;
+	volatile uint32_t  modstat;
+	volatile uint32_t  derraddra;
+	volatile uint32_t  serraddra;
+	volatile uint32_t  _pad_0x34_0x3b[2];
+	volatile uint32_t  serrcntreg;
+	volatile uint32_t  ecc_addrbus;
+	volatile uint32_t  ecc_rdata0bus;
+	volatile uint32_t  ecc_rdata1bus;
+	volatile uint32_t  ecc_rdata2bus;
+	volatile uint32_t  ecc_rdata3bus;
+	volatile uint32_t  ecc_wdata0bus;
+	volatile uint32_t  ecc_wdata1bus;
+	volatile uint32_t  ecc_wdata2bus;
+	volatile uint32_t  ecc_wdata3bus;
+	volatile uint32_t  ecc_rdataecc0bus;
+	volatile uint32_t  ecc_rdataecc1bus;
+	volatile uint32_t  ecc_wdataecc0bus;
+	volatile uint32_t  ecc_wdataecc1bus;
+	volatile uint32_t  ecc_dbytectrl;
+	volatile uint32_t  ecc_accctrl;
+	volatile uint32_t  ecc_startacc;
+	volatile uint32_t  ecc_wdctrl;
+	volatile uint32_t  _pad_0x84_0x8f[3];
+	volatile uint32_t  serrlkupa0;
 };
 
 void irq_handler_ecc_ram_serr(void);
@@ -62,4 +62,4 @@ void clear_ecc_ocram_ecc_status(void);
 #define ALT_ECC_INTSTAT_DERRPENA_SET_MSK	0x00000100
 #define ALT_ECC_ERRINTEN_SERRINTEN_SET_MSK	0x00000001
 
-#endif /* _SOCFPGA_ECC_RAM_A10_H_ */
+#endif /* _SOCFPGA_ECC_RAM_H_ */
