@@ -15,6 +15,7 @@ void sysmgr_config_warmrstcfgio(int enable);
 void sysmgr_get_pinmux_table(const u8 **table, unsigned int *table_len);
 #endif
 
+#if defined(CONFIG_SOCFPGA_GEN5)
 struct socfpga_system_manager {
 	/* System Manager Module */
 	u32	siliconid1;			/* 0x00 */
@@ -115,6 +116,77 @@ struct socfpga_system_manager {
 	u32	_pad_0x734;
 	u32	spim0usefpga;			/* 0x738 */
 };
+#else /* Arria10 System Manager */
+struct socfpga_system_manager {
+	u32  siliconid1;
+	u32  siliconid2;
+	u32  wddbg;
+	u32  bootinfo;
+	u32  mpu_ctrl_l2_ecc;
+	u32  _pad_0x14_0x1f[3];
+	u32  dma;
+	u32  dma_periph;
+	u32  sdmmcgrp_ctrl;
+	u32  sdmmc_l3master;
+	u32  nand_bootstrap;
+	u32  nand_l3master;
+	u32  usb0_l3master;
+	u32  usb1_l3master;
+	u32  emac_global;
+	u32  emac0;
+	u32  emac1;
+	u32  emac2;
+	u32  _pad_0x50_0x5f[4];
+	u32  fpgaintf_en_global;
+	u32  fpgaintf_en_0;
+	u32  fpgaintf_en_1;
+	u32  fpgaintf_en_2;
+	u32  fpgaintf_en_3;
+	u32  _pad_0x74_0x7f[3];
+	u32  noc_addr_remap_value;
+	u32  noc_addr_remap_set;
+	u32  noc_addr_remap_clear;
+	u32  _pad_0x8c_0x8f;
+	u32  ecc_intmask_value;
+	u32  ecc_intmask_set;
+	u32  ecc_intmask_clr;
+	u32  ecc_intstatus_serr;
+	u32  ecc_intstatus_derr;
+	u32  mpu_status_l2_ecc;
+	u32  mpu_clear_l2_ecc;
+	u32  mpu_status_l1_parity;
+	u32  mpu_clear_l1_parity;
+	u32  mpu_set_l1_parity;
+	u32  _pad_0xb8_0xbf[2];
+	u32  noc_timeout;
+	u32  noc_idlereq_set;
+	u32  noc_idlereq_clr;
+	u32  noc_idlereq_value;
+	u32  noc_idleack;
+	u32  noc_idlestatus;
+	u32  fpga2soc_ctrl;
+	u32  _pad_0xdc_0xff[9];
+	u32  tsmc_tsel_0;
+	u32  tsmc_tsel_1;
+	u32  tsmc_tsel_2;
+	u32  tsmc_tsel_3;
+	u32  _pad_0x110_0x200[60];
+	u32  romhw_ctrl;
+	u32  romcode_ctrl;
+	u32  romcode_cpu1startaddr;
+	u32  romcode_initswstate;
+	u32  romcode_initswlastld;
+	u32  _pad_0x214_0x217;
+	u32  warmram_enable;
+	u32  warmram_datastart;
+	u32  warmram_length;
+	u32  warmram_execution;
+	u32  warmram_crc;
+	u32  _pad_0x22c_0x22f;
+	u32  isw_handoff[8];
+	u32  romcode_bootromswstate[8];
+};
+#endif
 
 #define SYSMGR_ROMCODEGRP_CTRL_WARMRSTCFGPINMUX	(1 << 0)
 #define SYSMGR_ROMCODEGRP_CTRL_WARMRSTCFGIO	(1 << 1)
@@ -141,5 +213,55 @@ struct socfpga_system_manager {
 #define SYSMGR_EMACGRP_CTRL_PHYSEL0_LSB			0
 #define SYSMGR_EMACGRP_CTRL_PHYSEL1_LSB			2
 #define SYSMGR_EMACGRP_CTRL_PHYSEL_MASK			0x3
+
+/* For dedicated IO configuration */
+/* Voltage select enums */
+#define VOLTAGE_SEL_3V		0x0
+#define VOLTAGE_SEL_1P8V	0x1
+#define VOLTAGE_SEL_2P5V	0x2
+
+/* Input buffer enable */
+#define INPUT_BUF_DISABLE	0
+#define INPUT_BUF_1P8V		1
+#define INPUT_BUF_2P5V3V	2
+
+/* Weak pull up enable */
+#define WK_PU_DISABLE		0
+#define WK_PU_ENABLE		1
+
+/* Pull up slew rate control */
+#define PU_SLW_RT_SLOW		0
+#define PU_SLW_RT_FAST		1
+#define PU_SLW_RT_DEFAULT	PU_SLW_RT_SLOW
+
+/* Pull down slew rate control */
+#define PD_SLW_RT_SLOW		0
+#define PD_SLW_RT_FAST		1
+#define PD_SLW_RT_DEFAULT	PD_SLW_RT_SLOW
+
+/* Drive strength control */
+#define PU_DRV_STRG_DEFAULT	0x10
+#define PD_DRV_STRG_DEFAULT	0x10
+
+/* bit position */
+#define PD_DRV_STRG_LSB		0
+#define PD_SLW_RT_LSB		5
+#define PU_DRV_STRG_LSB		8
+#define PU_SLW_RT_LSB		13
+#define WK_PU_LSB		16
+#define INPUT_BUF_LSB		17
+#define BIAS_TRIM_LSB		19
+#define VOLTAGE_SEL_LSB		0
+
+#define ALT_SYSMGR_NOC_H2F_SET_MSK	0x00000001
+#define ALT_SYSMGR_NOC_LWH2F_SET_MSK	0x00000010
+#define ALT_SYSMGR_NOC_F2H_SET_MSK	0x00000100
+#define ALT_SYSMGR_NOC_F2SDR0_SET_MSK	0x00010000
+#define ALT_SYSMGR_NOC_F2SDR1_SET_MSK	0x00100000
+#define ALT_SYSMGR_NOC_F2SDR2_SET_MSK	0x01000000
+#define ALT_SYSMGR_NOC_TMO_EN_SET_MSK	0x00000001
+
+#define ALT_SYSMGR_ECC_INTSTAT_SERR_OCRAM_SET_MSK	0x00000002
+#define ALT_SYSMGR_ECC_INTSTAT_DERR_OCRAM_SET_MSK	0x00000002
 
 #endif /* _SYSTEM_MANAGER_H_ */
