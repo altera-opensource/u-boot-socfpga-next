@@ -201,9 +201,11 @@ struct socfpga_system_manager {
 #define SYSMGR_FPGAINTF_NAND	(1 << 4)
 #define SYSMGR_FPGAINTF_SDMMC	(1 << 5)
 
-/* FIXME: This is questionable macro. */
-#define SYSMGR_SDMMC_CTRL_SET(smplsel, drvsel)	\
-	((((drvsel) << 0) & 0x7) | (((smplsel) << 3) & 0x38))
+#if defined(CONFIG_SOCFPGA_GEN5)
+#define SYSMGR_SDMMC_SMPSEL_SHIFT	3
+#else
+#define SYSMGR_SDMMC_SMPSEL_SHIFT	4
+#endif
 
 /* EMAC Group Bit definitions */
 #define SYSMGR_EMACGRP_CTRL_PHYSEL_ENUM_GMII_MII	0x0
