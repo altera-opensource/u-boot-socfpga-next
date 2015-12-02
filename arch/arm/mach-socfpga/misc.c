@@ -15,6 +15,7 @@
 #include <watchdog.h>
 #include <asm/arch/reset_manager.h>
 #include <asm/arch/scan_manager.h>
+#include <asm/arch/sdram_a10.h>
 #include <asm/arch/system_manager.h>
 #include <asm/arch/dwmmc.h>
 #include <asm/arch/nic301.h>
@@ -31,10 +32,19 @@ static struct socfpga_system_manager *sysmgr_regs =
 	(struct socfpga_system_manager *)SOCFPGA_SYSMGR_ADDRESS;
 static struct socfpga_reset_manager *reset_manager_base =
 	(struct socfpga_reset_manager *)SOCFPGA_RSTMGR_ADDRESS;
+#if defined(CONFIG_SOCFPGA_GEN5)
 static struct nic301_registers *nic301_regs =
 	(struct nic301_registers *)SOCFPGA_L3REGS_ADDRESS;
+#endif
 static struct scu_registers *scu_regs =
 	(struct scu_registers *)SOCFPGA_MPUSCU_ADDRESS;
+
+#if defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
+static const struct socfpga_noc_fw_ocram *noc_fw_ocram_base =
+	(void *)SOCFPGA_SDR_FIREWALL_OCRAM_ADDRESS;
+static const struct socfpga_noc_fw_ddr_l3 *noc_fw_ddr_l3_base =
+	(void *)SOCFPGA_SDR_FIREWALL_L3_ADDRESS;
+#endif
 
 int dram_init(void)
 {
@@ -207,9 +217,14 @@ static int socfpga_fpga_id(const bool print_id)
 #if defined(CONFIG_DISPLAY_CPUINFO)
 int print_cpuinfo(void)
 {
+#if defined(CONFIG_SOCFPGA_GEN5)
 	const u32 bsel = readl(&sysmgr_regs->bootinfo) & 0x7;
 	puts("CPU:   Altera SoCFPGA Platform\n");
 	socfpga_fpga_id(1);
+#else
+	const u32 bsel = (readl(&sysmgr_regs->bootinfo) >> 12) & 0x7;
+	puts("CPU:   Altera SoCFPGA Arria 10\n");
+#endif
 	printf("BOOT:  %s\n", bsel_str[bsel].name);
 	return 0;
 }
@@ -292,6 +307,7 @@ int arch_cpu_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_SOCFPGA_GEN5)
 /*
  * Convert all NIC-301 AMBA slaves from secure to non-secure
  */
@@ -411,6 +427,43 @@ int do_bridge(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	return 0;
 }
+#else
+/*
++ * This function initializes security policies to be consistent across
++ * all logic units in the Arria 10.
++ *
++ * The idea is to set all security policies to be normal, nonsecure
++ * for all units.
++ */
+static void initialize_security_policies(void)
+{
+	/* Put OCRAM in non-secure */
+	writel(0x003f0000, &noc_fw_ocram_base->region0);
+	writel(0x1, &noc_fw_ocram_base->enable);
+
+	/* Put DDR in non-secure */
+	writel(0xffff0000, &noc_fw_ddr_l3_base->hpsregion0addr);
+	writel(0x1, &noc_fw_ddr_l3_base->enable);
+}
+
+int arch_early_init_r(void)
+{
+	initialize_security_policies();
+
+	/* Configure the L2 controller to make SDRAM start at 0 */
+	writel(0x1, &pl310->pl310_addr_filter_start);
+
+	/* assert reset to all except L4WD0 and L4TIMER0 */
+	socfpga_per_reset_all();
+
+	/* configuring the clock based on handoff */
+	/* TODO: Add call to cm_basic_init() */
+
+	/* Add device descriptor to FPGA device table */
+	socfpga_fpga_add();
+	return 0;
+}
+#endif
 
 U_BOOT_CMD(
 	bridge, 2, 1, do_bridge,
