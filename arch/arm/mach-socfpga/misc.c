@@ -224,12 +224,12 @@ static int socfpga_fpga_id(const bool print_id)
 #if defined(CONFIG_DISPLAY_CPUINFO)
 int print_cpuinfo(void)
 {
+	const u32 bsel = (readl(&sysmgr_regs->bootinfo) >>
+			  SYSMGR_BOOTINFO_BSEL_SHIFT) & 0x7;
 #if defined(CONFIG_TARGET_SOCFPGA_GEN5)
-	const u32 bsel = readl(&sysmgr_regs->bootinfo) & 0x7;
 	puts("CPU:   Altera SoCFPGA Platform\n");
 	socfpga_fpga_id(1);
 #else
-	const u32 bsel = (readl(&sysmgr_regs->bootinfo) >> 12) & 0x7;
 	puts("CPU:   Altera SoCFPGA Arria 10\n");
 #endif
 	printf("BOOT:  %s\n", bsel_str[bsel].name);
