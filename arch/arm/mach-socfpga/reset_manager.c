@@ -65,11 +65,11 @@ void socfpga_per_reset_all(void)
 	unsigned mask_ecc_ocp = 0x0000FF00;
 
 	/* disable all components except ECC_OCP, L4 Timer0 and L4 WD0 */
-	writel(~l4wd0, &reset_manager_base->per1_mod_reset);
-	setbits_le32(&reset_manager_base->per0_mod_reset, ~mask_ecc_ocp);
+	writel(~l4wd0, &reset_manager_base->per2_mod_reset);
+	setbits_le32(&reset_manager_base->per_mod_reset, ~mask_ecc_ocp);
 
 	/* Finally disable the ECC_OCP */
-	setbits_le32(&reset_manager_base->per0_mod_reset, mask_ecc_ocp);
+	setbits_le32(&reset_manager_base->per_mod_reset, mask_ecc_ocp);
 #endif
 }
 
