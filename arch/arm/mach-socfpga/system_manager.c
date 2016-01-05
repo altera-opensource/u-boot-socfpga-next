@@ -19,6 +19,7 @@ static struct socfpga_system_manager *sysmgr_regs =
  * The value is not wrote to SYSMGR.FPGAINTF.MODULE but
  * CONFIG_SYSMGR_ISWGRP_HANDOFF.
  */
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 static void populate_sysmgr_fpgaintf_module(void)
 {
 	uint32_t handoff_val = 0;
@@ -83,3 +84,4 @@ void sysmgr_config_warmrstcfgio(int enable)
 		clrbits_le32(&sysmgr_regs->romcodegrp_ctrl,
 			     SYSMGR_ROMCODEGRP_CTRL_WARMRSTCFGIO);
 }
+#endif /* CONFIG_TARGET_SOCFPGA_GEN5 */
