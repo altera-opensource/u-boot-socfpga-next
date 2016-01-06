@@ -494,6 +494,11 @@ int arch_early_init_r(void)
 	socfpga_fpga_add();
 	return 0;
 }
+
+int do_bridge(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	return 0;
+}
 #endif
 
 U_BOOT_CMD(
