@@ -137,7 +137,7 @@ struct socfpga_system_manager {
 	u32  emac1;
 	u32  emac2;
 	u32  _pad_0x50_0x5f[4];
-	u32  fpgaintf_en_global;
+	u32  fpgaintfgrp_gbl; /* stated as fpgaintf_en_global in TRM */
 	u32  fpgaintf_en_0;
 	u32  fpgaintf_en_1;
 	u32  fpgaintf_en_2;
