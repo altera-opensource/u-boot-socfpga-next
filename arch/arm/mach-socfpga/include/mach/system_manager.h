@@ -218,6 +218,7 @@ struct socfpga_system_manager {
 
 #define SYSMGR_EMACGRP_CTRL_PHYSEL0_LSB			0
 #define SYSMGR_EMACGRP_CTRL_PHYSEL1_LSB			2
+#define SYSMGR_EMACGRP_CTRL_PHYSEL2_LSB			4
 #define SYSMGR_EMACGRP_CTRL_PHYSEL_MASK			0x3
 
 /* For dedicated IO configuration */
