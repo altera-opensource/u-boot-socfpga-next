@@ -278,8 +278,10 @@ int socfpga_load(Altera_desc *desc, const void *rbf_data, size_t rbf_size)
 	/* Disable all axi bridge (hps2fpga, lwhps2fpga & fpga2hps) */
 	socfpga_bridges_reset(1);
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 	/* Unmap the bridges from NIC-301 */
 	writel(0x1, SOCFPGA_L3REGS_ADDRESS);
+#endif
 
 	/* Initialize the FPGA Manager */
 	status = fpgamgr_program_init();
