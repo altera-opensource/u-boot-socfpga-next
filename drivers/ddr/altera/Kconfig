@@ -1,0 +1,6 @@
+config ALTERA_SDRAM
+	bool "SoCFPGA SDRAM for Arria5/Cyclone5 devices"
+	default y if TARGET_SOCFPGA_GEN5
+	help
+	  This is for building the SDRAM controller for the Arria5/Cyclone5
+	  devices.
