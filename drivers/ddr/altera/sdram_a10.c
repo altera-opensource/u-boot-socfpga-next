@@ -91,13 +91,12 @@ u32 ddr_config[] = {
 	ARRIA10_DDR_CONFIG(1, 4, 10, 16),
 	ARRIA10_DDR_CONFIG(1, 4, 10, 17),
 };
-#define DDR_CONFIG_ELEMENTS	(sizeof(ddr_config)/sizeof(u32))
 
-int match_ddr_conf(u32 ddr_conf)
+static int match_ddr_conf(u32 ddr_conf)
 {
 	int i;
 
-	for (i = 0; i < DDR_CONFIG_ELEMENTS; i++) {
+	for (i = 0; i < (sizeof(ddr_config)/4); i++) {
 		if (ddr_conf == ddr_config[i])
 			return i;
 	}
@@ -440,11 +439,20 @@ void sdram_mmr_init(void)
 	}
 
 	/* Set the DDR Configuration [0xFFD12400] */
-	io48_value = ARRIA10_DDR_CONFIG(ctrlcfg1.cfg_addr_order,
-				      (dramaddrw.cfg_bank_addr_width +
-				      dramaddrw.cfg_bank_group_addr_width),
-				      dramaddrw.cfg_col_addr_width,
-				      dramaddrw.cfg_row_addr_width);
+	cfg_addr_order = (ctrlcfg1_reg & ADDR_ORDER_MASK) >> ADDR_ORDER_SHIFT;
+	cfg_bank_addr_width = (dramaddrw_reg & CFG_BANK_ADDR_WIDTH_MASK) >>
+			       CFG_BANK_ADDR_WIDTH_SHIFT;
+	cfg_bank_group_addr_width = (dramaddrw_reg & CFG_BANK_GROUP_ADDR_WIDTH_MASK) >>
+				     CFG_BANK_GROUP_ADDR_WIDTH_SHIFT;
+	cfg_col_addr_width = (dramaddrw_reg & CFG_COL_ADDR_WIDTH_MASK);
+	cfg_row_addr_width = (dramaddrw_reg & CFG_ROW_ADDR_WIDTH_MASK) >>
+			      CFG_ROW_ADDR_WIDTH_SHIFT;
+
+	io48_value = ARRIA10_DDR_CONFIG(cfg_addr_order,
+					(cfg_bank_addr_width +
+					cfg_bank_group_addr_width),
+					cfg_col_addr_width,
+					cfg_row_addr_width);
 
 	update_value = match_ddr_conf(io48_value);
 	if (update_value)
@@ -460,27 +468,38 @@ void sdram_mmr_init(void)
 	 *  for HMC clock units. 1066MHz is close to 1ns so use 15 directly.
 	 *  WRTOMISS = ((RL + BL/2 + 2 + tWR) >> 1)- rd-to-wr + tRP + tRCD
 	 */
-	update_value = (caltim2.cfg_rd_to_pch +  caltim4.cfg_pch_to_valid +
-			caltim0.cfg_act_to_rdwr -
-			(ctrlcfg0.cfg_ctrl_burst_len >> 2));
-	io48_value = ((((socfpga_io48_mmr_base->dramtiming0 &
-		      ALT_IO48_DRAMTIME_MEM_READ_LATENCY_MASK) + 2 + 15 +
-		      (ctrlcfg0.cfg_ctrl_burst_len >> 1)) >> 1) -
-		      /* Up to here was in memory cycles so divide by 2 */
-		      caltim1.cfg_rd_to_wr + caltim0.cfg_act_to_rdwr +
-		      caltim4.cfg_pch_to_valid);
+	cfg_rd_to_pch = (caltim2_reg & CFG_RD_TO_PCH_MASK) >>
+			 CFG_RD_TO_PCH_SHIFT;
+	cfg_pch_to_valid = (caltim4_reg & CFG_PCH_TO_VALID_MASK) >>
+			    CFG_PCH_TO_VALID_SHIFT;
+	cfg_act_to_rdwr = (caltim0_reg & CFG_ACT_TO_RDWR_MASK) >>
+			   CFG_ACT_TO_RDWR_MASK;
+	cfg_ctrl_burst_len = (ctrlcfg0_reg & CTRL_BURST_LENGTH_MASK) >>
+			      CTRL_BURST_LENGTH_SHIFT;
+	update_value = (cfg_rd_to_pch + caltim4.cfg_pch_to_valid +
+			cfg_act_to_rdwr - (cfg_ctrl_burst_len >> 2));
 
+	cfg_rd_to_wr = (caltim1_reg & CALTIMING1_CFG_RD_TO_RD_MASK);
+	io48_value = ((((socfpga_io48_mmr_base->dramtiming0 &
+		      DRAMTIME_MEM_READ_LATENCY_MASK) + 2 + 15 +
+		      (cfg_ctrl_burst_len >> 1)) >> 1) -
+		      /* Up to here was in memory cycles so divide by 2 */
+		      cfg_rd_to_wr + cfg_act_to_rdwr + cfg_pch_to_valid);
+
+	cfg_act_to_act = (caltim0_reg & CFG_ACT_TO_ACT_MASK) >>
+			  CFG_ACT_TO_ACT_SHIFT;
+	cfg_wr_to_rd = (caltim3_reg & CFG_WR_TO_RD_MASK) >> CFG_WR_TO_RD_SHIFT;
 	writel(((caltim0.cfg_act_to_act <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_ACTTOACT_LSB) |
 		(update_value <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_RDTOMISS_LSB) |
 		(io48_value <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_WRTOMISS_LSB) |
-		((ctrlcfg0.cfg_ctrl_burst_len >> 2) <<
+		((cfg_ctrl_burst_len >> 2) <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_BURSTLEN_LSB) |
-		(caltim1.cfg_rd_to_wr <<
+		(cfg_rd_to_wr <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_RDTOWR_LSB) |
-		(caltim3.cfg_wr_to_rd <<
+		(cfg_wr_to_rd <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_WRTORD_LSB) |
 		(((ddrioctl == 1) ? 1 : 0) <<
 			ALT_NOC_MPU_DDR_T_SCHED_DDRTIMING_BWRATIO_LSB)),
@@ -502,9 +521,12 @@ void sdram_mmr_init(void)
 	 * Configuring timing values concerning activate commands
 	 * [0xFFD12438] [FAWBANK alway 1 because always 4 bank DDR]
 	 */
-	writel(((caltim0.cfg_act_to_act_db <<
+	cfg_act_to_act_db = (caltim0_reg & CFG_ACT_TO_ACT_DIFF_BG_MASK) >>
+			     CFG_ACT_TO_ACT_DIFF_BG_SHIFT;
+	cfg_4_act_to_act = (caltim9_reg & CFG_WR_4_ACT_TO_ACT_MASK);
+	writel(((cfg_act_to_act_db <<
 			ALT_NOC_MPU_DDR_T_SCHED_ACTIVATE_RRD_LSB) |
-		(caltim9.cfg_4_act_to_act <<
+		(cfg_4_act_to_act <<
 			ALT_NOC_MPU_DDR_T_SCHED_ACTIVATE_FAW_LSB) |
 		(ARRIA10_SDR_ACTIVATE_FAWBANK <<
 			ALT_NOC_MPU_DDR_T_SCHED_ACTIVATE_FAWBANK_LSB)),
@@ -514,11 +536,17 @@ void sdram_mmr_init(void)
 	 * Configuring timing values concerning device to device data bus
 	 * ownership change [0xFFD1243C]
 	 */
-	writel(((caltim1.cfg_rd_to_rd_dc <<
+	cfg_rd_to_rd_dc = (caltim1_reg & CFG_RD_TO_RD_DC_MASK) >>
+			   CFG_RD_TO_RD_DC_SHIFT;
+	cfg_rd_to_wr_dc = (caltim1_reg & CFG_RD_TO_WR_DC_MASK) >>
+			   CFG_RD_TO_WR_DC_SHIFT;
+	cfg_wr_to_rd_dc = (caltim3_reg & CFG_WR_TO_RD_DC_MASK) >>
+			   CFG_WR_TO_RD_DC_SHIFT;
+	writel(((cfg_rd_to_rd_dc <<
 			ALT_NOC_MPU_DDR_T_SCHED_DEVTODEV_BUSRDTORD_LSB) |
-		(caltim1.cfg_rd_to_wr_dc <<
+		(cfg_rd_to_wr_dc <<
 			ALT_NOC_MPU_DDR_T_SCHED_DEVTODEV_BUSRDTOWR_LSB) |
-		(caltim3.cfg_wr_to_rd_dc <<
+		(cfg_wr_to_rd_dc <<
 			ALT_NOC_MPU_DDR_T_SCHED_DEVTODEV_BUSWRTORD_LSB)),
 		&socfpga_noc_ddr_scheduler_base->ddr_t_main_scheduler_devtodev);
 }
