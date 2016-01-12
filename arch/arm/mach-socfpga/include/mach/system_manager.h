@@ -133,9 +133,7 @@ struct socfpga_system_manager {
 	u32  usb0_l3master;
 	u32  usb1_l3master;
 	u32  emac_global;
-	u32  emac0;
-	u32  emac1;
-	u32  emac2;
+	u32  emac[3];
 	u32  _pad_0x50_0x5f[4];
 	u32  fpgaintf_en_global;
 	u32  fpgaintf_en_0;
