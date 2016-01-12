@@ -100,13 +100,10 @@ static void dwmac_deassert_reset(const unsigned int of_reset_id)
 		return;
 	}
 
-	/* Clearing emac0 PHY interface select to 0 */
-	clrbits_le32(&sysmgr_regs->emacgrp_ctrl,
-		     SYSMGR_EMACGRP_CTRL_PHYSEL_MASK << physhift);
-
 	/* configure to PHY interface select choosed */
-	setbits_le32(&sysmgr_regs->emacgrp_ctrl,
-		     SYSMGR_EMACGRP_CTRL_PHYSEL_ENUM_RGMII << physhift);
+	clrsetbits_le32(&sysmgr_regs->emacgrp_ctrl,
+			SYSMGR_EMACGRP_CTRL_PHYSEL_MASK << physhift,
+			SYSMGR_EMACGRP_CTRL_PHYSEL_ENUM_RGMII << physhift);
 
 	/* Release the EMAC controller from reset */
 	socfpga_per_reset(reset, 0);
