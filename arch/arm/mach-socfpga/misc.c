@@ -22,7 +22,11 @@
 #include <asm/arch/scu.h>
 #include <asm/pl310.h>
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 #include <dt-bindings/reset/altr,rst-mgr.h>
+#else
+#include <dt-bindings/reset/altr,rst-mgr-a10.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -95,15 +99,25 @@ static void dwmac_deassert_reset(const unsigned int of_reset_id)
 	} else if (of_reset_id == EMAC1_RESET) {
 		physhift = SYSMGR_EMACGRP_CTRL_PHYSEL1_LSB;
 		reset = SOCFPGA_RESET(EMAC1);
+#ifndef CONFIG_TARGET_SOCFPGA_GEN5
+	} else if (of_reset_id == EMAC2_RESET) {
+		reset = SOCFPGA_RESET(EMAC2);
+#endif
 	} else {
 		printf("GMAC: Invalid reset ID (%i)!\n", of_reset_id);
 		return;
 	}
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 	/* configure to PHY interface select choosed */
 	clrsetbits_le32(&sysmgr_regs->emacgrp_ctrl,
 			SYSMGR_EMACGRP_CTRL_PHYSEL_MASK << physhift,
 			SYSMGR_EMACGRP_CTRL_PHYSEL_ENUM_RGMII << physhift);
+#else
+	clrsetbits_le32(&sysmgr_regs->emac[of_reset_id - EMAC0_RESET],
+			SYSMGR_EMACGRP_CTRL_PHYSEL_MASK,
+			SYSMGR_EMACGRP_CTRL_PHYSEL_ENUM_RGMII);
+#endif
 
 	/* Release the EMAC controller from reset */
 	socfpga_per_reset(reset, 0);
