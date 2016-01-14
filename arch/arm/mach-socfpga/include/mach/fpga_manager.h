@@ -10,6 +10,7 @@
 
 #include <altera.h>
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 struct socfpga_fpga_manager {
 	/* FPGA Manager Module */
 	u32	stat;			/* 0x00 */
@@ -38,6 +39,38 @@ struct socfpga_fpga_manager {
 	u32	gpio_config_reg2;	/* 0x870 */
 	u32	gpio_config_reg1;
 };
+#else
+struct socfpga_fpga_manager {
+	/* FPGA Manager Module */
+	u32	__pad_0x0;
+	u32	__pad_0x4;
+	u32	dclkcnt;
+	u32	dclkstat;
+	u32	gpo;			/* 0x10 */
+	u32	gpi;
+	u32	misci;			/* 0x18 */
+	u32	_pad_0x1c_0x2c[5];
+
+	u32	emr_data[6];
+	u32	emr_valid;
+	u32	emr_en;
+	u32	jtag_config;		/* 0x50 */
+	u32	jtag_status;
+	u32	jtag_kick;
+	u32	__pad_0x5c;
+	u32	jtag_data_w;		/* 0x60 */
+	u32	jtag_data_r;
+	u32	_pad_0x68_0x70[2];
+	u32	imgcfg_ctrl[3];		/* 0x70 */
+	u32	__pad_0x7c;
+	u32	imgcfg_stat;		/* 0x80 */
+	u32	intr_masked_status;
+	u32	intr_mask;
+	u32	intr_polarity;
+	u32	dma_config;		/* 0x90 */
+	u32	imgcfg_fifo_status;
+};
+#endif
 
 #define FPGAMGRREGS_STAT_MODE_MASK		0x7
 #define FPGAMGRREGS_STAT_MSEL_MASK		0xf8
