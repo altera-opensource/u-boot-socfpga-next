@@ -7,9 +7,6 @@
 #include <common.h>
 #include <fdtdec.h>
 #include <malloc.h>
-#include <mmc.h>
-#include <watchdog.h>
-#include <ns16550.h>
 #include <asm/io.h>
 #include <asm/arch/cff.h>
 #include <asm/arch/misc.h>
@@ -31,10 +28,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NIOS_OCT_ACK_MASK	(1 << 7)
 
 #define DDR_EMIF_DANCE_VER	0x00010001
-
-#define DDR_REG_SEQ2CORE        0xFFD0507C
-#define DDR_REG_GPOUT           0xFFD03010
-#define DDR_REG_GPIN            0xFFD03014
 
 static const struct socfpga_ecc_hmc *socfpga_ecc_hmc_base =
 		(void *)SOCFPGA_SDR_ADDRESS;
@@ -390,8 +383,6 @@ void sdram_mmr_init(void)
 		printf("fpga not configured!\n");
 		return -1;
 	}
-
-	WATCHDOG_RESET();
 
 	/* Check to see if SDRAM cal was success */
 	if (sdram_startup()) {
@@ -795,7 +786,7 @@ const struct firewall_entry firewall_table[] = {
 
 };
 
-int of_sdram_firewall_setup(const void *blob)
+static int of_sdram_firewall_setup(const void *blob)
 {
 	int child, i, node;
 	u32 start_end[2];
@@ -831,47 +822,9 @@ int of_sdram_firewall_setup(const void *blob)
 /* Initialise the DRAM by telling the DRAM Size */
 int dram_init(void)
 {
-	bd_t *bd;
-	unsigned long addr;
-	int rval = 0;
-
-	WATCHDOG_RESET();
-
-	/* enable cache as we want to speed up CFF process */
-#if !(defined(CONFIG_SYS_ICACHE_OFF) && defined(CONFIG_SYS_DCACHE_OFF))
-	/* reserve TLB table */
-	gd->arch.tlb_size = 4096 * 4;
-	/* page table is located at last 16kB of OCRAM */
-	addr = CONFIG_SYS_INIT_SP_ADDR;
-	gd->arch.tlb_addr = addr;
-
-	/*
-	 * We need to setup the bd for the dram info too. We will use same
-	 * memory layout in later setup
-	 */
-	addr -= (CONFIG_OCRAM_STACK_SIZE + CONFIG_OCRAM_MALLOC_SIZE);
-
-	/*
-	 * (permanently) allocate a Board Info struct
-	 * and a permanent copy of the "global" data
-	 */
-	addr -= sizeof(bd_t);
-	bd = (bd_t *)addr;
-	gd->bd = bd;
-
-	/* enable the cache */
-	enable_caches();
-#endif
-
-	WATCHDOG_RESET();
-	u32 malloc_start = CONFIG_SYS_INIT_SP_ADDR
-		- CONFIG_OCRAM_STACK_SIZE - CONFIG_OCRAM_MALLOC_SIZE;
-	mem_malloc_init(malloc_start, CONFIG_OCRAM_MALLOC_SIZE);
-
 	if (is_external_fpga_config(gd->fdt_blob)) {
 		ddr_calibration_sequence();
 	} else {
-#if defined(CONFIG_MMC)
 		int len = 0;
 		const char *cff = get_cff_filename(gd->fdt_blob, &len);
 		if (cff && (len > 0)) {
@@ -879,30 +832,13 @@ int dram_init(void)
 
 			rval = cff_from_mmc_fat("0:1", cff, len);
 		}
-#elif defined(CONFIG_CADENCE_QSPI)
-		rval = cff_from_qspi_env();
-#else
-#error "unsupported config"
-#endif
+
 		if (rval > 0) {
-			reset_assert_uart();
+			socfpga_per_reset(SOCFPGA_RESET(UART0), 1);
 			config_shared_fpga_pins(gd->fdt_blob);
-			reset_deassert_uart();
-
-			reset_deassert_shared_connected_peripherals();
-			reset_deassert_fpga_connected_peripherals();
-			NS16550_init((NS16550_t)CONFIG_SYS_NS16550_COM1,
-				     ns16550_calc_divisor(
-					     (NS16550_t)CONFIG_SYS_NS16550_COM1,
-					     CONFIG_SYS_NS16550_CLK,
-					     CONFIG_BAUDRATE));
-
+			socfpga_per_reset(SOCFPGA_RESET(UART0), 0);
 			ddr_calibration_sequence();
 		}
 	}
-
-	/* Skip relocation as U-Boot cannot run on SDRAM for secure boot */
-	skip_relocation();
-	WATCHDOG_RESET();
 	return 0;
 }
