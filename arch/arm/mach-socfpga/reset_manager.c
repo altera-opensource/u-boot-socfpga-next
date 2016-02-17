@@ -137,6 +137,51 @@ void socfpga_bridges_reset(int enable)
 		/* Remap the bridges into memory map */
 		writel(l3mask, SOCFPGA_L3REGS_ADDRESS);
 	}
+#else
+	u32 reset_mask;
+
+	if (enable)
+		;
+	else {
+		/* set idle request to all bridges */
+		writel(ALT_SYSMGR_NOC_H2F_SET_MSK |
+		       ALT_SYSMGR_NOC_LWH2F_SET_MSK |
+		       ALT_SYSMGR_NOC_F2H_SET_MSK |
+		       ALT_SYSMGR_NOC_F2SDR0_SET_MSK |
+		       ALT_SYSMGR_NOC_F2SDR1_SET_MSK |
+		       ALT_SYSMGR_NOC_F2SDR2_SET_MSK,
+		       &sysmgr_regs->noc_idlereq_set);
+
+		/* Enable the NOC timeout */
+		writel(ALT_SYSMGR_NOC_TMO_EN_SET_MSK,
+		       &sysmgr_regs->noc_timeout);
+
+		/* Poll until all idleack to 1 */
+		while ((readl(&sysmgr_regs->noc_idleack) ^
+		       (ALT_SYSMGR_NOC_H2F_SET_MSK |
+			ALT_SYSMGR_NOC_LWH2F_SET_MSK |
+			ALT_SYSMGR_NOC_F2H_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR0_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR1_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR2_SET_MSK)));
+
+		/* Poll until all idlestatus to 1 */
+		while ((readl(&sysmgr_regs->noc_idlestatus) ^
+		       (ALT_SYSMGR_NOC_H2F_SET_MSK |
+			ALT_SYSMGR_NOC_LWH2F_SET_MSK |
+			ALT_SYSMGR_NOC_F2H_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR0_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR1_SET_MSK |
+			ALT_SYSMGR_NOC_F2SDR2_SET_MSK)));
+
+		/* Put all bridges (except NOR DDR scheduler) into reset state */
+		socfpga_per_reset(SOCFPGA_RESET(HPS2FPGA), 1);
+		socfpga_per_reset(SOCFPGA_RESET(LWHPS2FPGA), 1);
+		socfpga_per_reset(SOCFPGA_RESET(FPGA2HPS), 1);
+		socfpga_per_reset(SOCFPGA_RESET(F2SSDRAM0), 1);
+		socfpga_per_reset(SOCFPGA_RESET(F2SSDRAM1), 1);
+		socfpga_per_reset(SOCFPGA_RESET(F2SSDRAM2), 1);
+	}
 #endif
 }
 #endif
