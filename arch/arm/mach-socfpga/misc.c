@@ -485,6 +485,28 @@ int arch_early_init_r(void)
 	socfpga_fpga_add();
 	return 0;
 }
+
+int do_bridge(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	argv++;
+
+	switch (*argv[0]) {
+	case 'e':	/* Enable */
+		break;
+	case 'd':	/* Disable all axi bridges(hps2fpga, lwhps2fpga &
+			 * fpga2hps)
+			 */
+		socfpga_bridges_reset(0);
+		break;
+	default:
+		return CMD_RET_USAGE;
+	}
+
+	return 0;
+}
 #endif
 
 U_BOOT_CMD(
