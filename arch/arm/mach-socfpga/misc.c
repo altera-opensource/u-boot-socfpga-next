@@ -172,6 +172,7 @@ struct {
 	{ "qspi", "QSPI Flash (3.0V)", },
 };
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
 static const struct {
 	const u16	pn;
 	const char	*name;
@@ -228,6 +229,7 @@ static int socfpga_fpga_id(const bool print_id)
 		       socfpga_fpga_model[i].name, version);
 	return i;
 }
+#endif
 
 /*
  * Print CPU information
@@ -252,10 +254,12 @@ int print_cpuinfo(void)
 int arch_misc_init(void)
 {
 	const u32 bsel = readl(&sysmgr_regs->bootinfo) & 0x7;
-	const int fpga_id = socfpga_fpga_id(0);
 	setenv("bootmode", bsel_str[bsel].mode);
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
+	const int fpga_id = socfpga_fpga_id(0);
 	if (fpga_id >= 0)
 		setenv("fpgatype", socfpga_fpga_model[fpga_id].var);
+#endif
 	return 0;
 }
 #endif
