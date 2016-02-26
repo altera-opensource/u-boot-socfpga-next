@@ -5,6 +5,8 @@
  */
 
 #include <common.h>
+#include <clk.h>
+#include <dm.h>
 #include <asm/io.h>
 #include <asm/arch/clock_manager.h>
 
@@ -518,8 +520,13 @@ unsigned int cm_get_spi_controller_clk_hz(void)
 	return clock;
 }
 
+#define CLK_MHZ(x)      ((x) / 1000000)
+
 static void cm_print_clock_quick_summary(void)
 {
+	struct udevice *dev;
+	int ret, i;
+
 	printf("MPU       %10ld kHz\n", cm_get_mpu_clk_hz() / 1000);
 	printf("DDR       %10ld kHz\n", cm_get_sdram_clk_hz() / 1000);
 	printf("EOSC1       %8d kHz\n", cm_get_osc_clk_hz(1) / 1000);
@@ -530,6 +537,16 @@ static void cm_print_clock_quick_summary(void)
 	printf("QSPI        %8d kHz\n", cm_get_qspi_controller_clk_hz() / 1000);
 	printf("UART        %8d kHz\n", cm_get_l4_sp_clk_hz() / 1000);
 	printf("SPI         %8d kHz\n", cm_get_spi_controller_clk_hz() / 1000);
+
+	for(i=0;i<10;i++) {
+		ret = uclass_get_device(UCLASS_CLK, i, &dev);
+        	if (ret) {
+                	printf("clk-uclass not found %d\n",i);
+	        } else {
+			printf("PLL Speed: %lu MHz\n",
+				CLK_MHZ(clk_get_periph_rate(dev, i)));
+		}
+	}
 }
 
 int set_cpu_clk_info(void)
