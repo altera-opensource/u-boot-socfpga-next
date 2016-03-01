@@ -525,6 +525,7 @@ unsigned int cm_get_spi_controller_clk_hz(void)
 static void cm_print_clock_quick_summary(void)
 {
 	struct udevice *dev;
+	struct uclass *uc;
 	int ret, i;
 
 	printf("MPU       %10ld kHz\n", cm_get_mpu_clk_hz() / 1000);
@@ -538,14 +539,18 @@ static void cm_print_clock_quick_summary(void)
 	printf("UART        %8d kHz\n", cm_get_l4_sp_clk_hz() / 1000);
 	printf("SPI         %8d kHz\n", cm_get_spi_controller_clk_hz() / 1000);
 
-	for(i=0;i<10;i++) {
-		ret = uclass_get_device(UCLASS_CLK, i, &dev);
-        	if (ret) {
-                	printf("clk-uclass not found %d\n",i);
-	        } else {
-			printf("PLL Speed: %lu MHz\n",
-				CLK_MHZ(clk_get_periph_rate(dev, i)));
-		}
+	ret = uclass_get(UCLASS_CLK, &uc);
+       	if (ret) {
+               	printf("clk-uclass not found %d\n",i);
+        } else {
+		printf("uclass_clk found\n");
+		for (i = 0; ; i++) {
+                	ret = uclass_get_device_by_seq(UCLASS_CLK, i, &dev);
+	                if (ret == -ENODEV)
+        	                break;
+       			}
+		
+		printf("found %d clocks\n",i);
 	}
 }
 
