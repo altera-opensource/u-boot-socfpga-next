@@ -59,6 +59,7 @@ config SYS_VENDOR
 	default "altera" if TARGET_SOCFPGA_CYCLONE5_SOCDK
 	default "denx" if TARGET_SOCFPGA_DENX_MCVEVK
 	default "ebv" if TARGET_SOCFPGA_EBV_SOCRATES
+	default "ebv" if TARGET_SOCFPGA_SR1500
 	default "terasic" if TARGET_SOCFPGA_TERASIC_DE0_NANO
 	default "terasic" if TARGET_SOCFPGA_TERASIC_SOCKIT
 
