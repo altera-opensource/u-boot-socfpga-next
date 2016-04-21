@@ -129,7 +129,6 @@
 #define CONFIG_USB_OHCI_NEW
 #define CONFIG_SYS_OHCI_BE_CONTROLLER
 #define CONFIG_USB_STORAGE
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_USB
 
 #undef CONFIG_SYS_USB_OHCI_BOARD_INIT
@@ -165,13 +164,11 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO
 #define CONFIG_CMD_SNTP
@@ -189,8 +186,6 @@
 #if defined(CONFIG_CHARON) || defined(CONFIG_FO300) || \
 	defined(CONFIG_MINIFAP) || defined(CONFIG_STK52XX)
     #define CONFIG_CMD_IDE
-    #define CONFIG_CMD_FAT
-    #define CONFIG_CMD_EXT2
 #endif
 
 #if defined(CONFIG_CHARON) || defined(CONFIG_FO300) || \

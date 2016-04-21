@@ -45,7 +45,6 @@
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_DISPLAY_CPUINFO
 
-#define CONFIG_CMD_BOOTZ
 
 /* general purpose I/O */
 #define CONFIG_ATMEL_LEGACY		/* required until (g)pio is fixed */
@@ -79,7 +78,6 @@
 #define CONFIG_CMD_PING		1
 #define CONFIG_CMD_DHCP		1
 #define CONFIG_CMD_NAND		1
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_USB		1
 
 /*
@@ -131,7 +129,6 @@
 #define AT91_SPI_CLK			15000000
 #else
 /* Enable MMC. The MCCK is conflicted with DataFlash */
-#define CONFIG_CMD_MMC
 #endif
 
 #ifdef CONFIG_AT91SAM9G20EK

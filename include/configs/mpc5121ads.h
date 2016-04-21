@@ -414,15 +414,12 @@
 #define CONFIG_LOADS_ECHO	1	/* echo on for serial download */
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	1	/* allow baudrate change */
 
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_IDE
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO
 
@@ -465,7 +462,6 @@
 #define CONFIG_MAC_PARTITION
 #define CONFIG_ISO_PARTITION
 
-#define CONFIG_CMD_FAT
 #define CONFIG_SUPPORT_VFAT
 
 #endif /* defined(CONFIG_CMD_IDE) */

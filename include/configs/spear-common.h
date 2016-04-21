@@ -103,7 +103,6 @@
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_SAVES
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 

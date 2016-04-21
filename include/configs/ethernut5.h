@@ -89,23 +89,17 @@
 
 /* Command line configuration */
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_SPI
 
 #ifndef MINIMAL_LOADER
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_BSP
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_CDP
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_DNS
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_I2C
-#define CONFIG_CMD_MMC
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_RARP
 #define CONFIG_CMD_REISER

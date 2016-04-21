@@ -132,7 +132,6 @@ extern unsigned long long get_phys_ccsrbar_addr_early(void);
 
 #define CONFIG_LBA48
 #define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_EXT2
 
 /*
  * Environment
@@ -147,8 +146,6 @@ extern unsigned long long get_phys_ccsrbar_addr_early(void);
  * Command line configuration.
  */
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_BOOTZ
-#define CONFIG_CMD_GREPENV
 #define CONFIG_CMD_IRQ
 #define CONFIG_CMD_PING
 

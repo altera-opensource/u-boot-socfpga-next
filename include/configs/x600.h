@@ -109,15 +109,11 @@
 /*
  * Command support defines
  */
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ENV
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_FPGA_LOADMK
-#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_I2C
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING

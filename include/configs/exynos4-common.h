@@ -24,7 +24,6 @@
 
 #undef CONFIG_CMD_ONENAND
 #undef CONFIG_CMD_MTDPARTS
-#define CONFIG_CMD_DFU
 #define CONFIG_CMD_GPT
 
 /* USB Composite download gadget - g_dnl */
@@ -55,7 +54,6 @@
 #define CONFIG_USB_GADGET_DUALSPEED
 #define CONFIG_USB_GADGET_VBUS_DRAW	2
 
-#define CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 
 /* Common environment variables */

@@ -84,7 +84,6 @@
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_ADDR			0x1F
 #define CONFIG_SYS_FAULT_ECHO_LINK_DOWN
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 
@@ -130,7 +129,6 @@
 #define CONFIG_USB_OHCI_LPC32XX
 #define CONFIG_USB_ISP1301_I2C_ADDR		0x2d
 #define CONFIG_USB_STORAGE
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_USB
 
 /*
@@ -179,7 +177,6 @@
 /*
  * U-Boot Commands
  */
-#define CONFIG_CMD_CACHE
 
 /*
  * Boot Linux

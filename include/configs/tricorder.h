@@ -147,10 +147,7 @@
 #define CONFIG_SYS_NAND_MAX_ECCPOS	56
 
 /* commands to include */
-#define CONFIG_CMD_EXT2			/* EXT2 Support */
-#define CONFIG_CMD_FAT			/* FAT support */
 #define CONFIG_CMD_I2C			/* I2C serial bus support */
-#define CONFIG_CMD_MMC			/* MMC support */
 #define CONFIG_CMD_MTDPARTS		/* Enable MTD parts commands */
 #define CONFIG_CMD_NAND			/* NAND support */
 #define CONFIG_CMD_NAND_LOCK_UNLOCK	/* nand (un)lock commands */

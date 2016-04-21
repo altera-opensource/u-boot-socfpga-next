@@ -331,7 +331,6 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_EEPROM
-#define CONFIG_CMD_ASKENV
 
 #if defined(CONFIG_PCI)
 	#define CONFIG_CMD_PCI

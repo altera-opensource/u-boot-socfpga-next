@@ -45,8 +45,6 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_DHCP
 
 #define CONFIG_DRIVER_NE2000

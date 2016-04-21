@@ -161,8 +161,6 @@
 /*
  * File systems support
  */
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 
 /*
  * Use the HUSH parser

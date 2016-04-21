@@ -467,7 +467,6 @@ DEFAULT_LINUX_BOOT_ENV \
 #endif
 
 #ifdef CONFIG_USB_MUSB_GADGET
-#define CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 
 /* USB TI's IDs */
@@ -492,7 +491,6 @@ DEFAULT_LINUX_BOOT_ENV \
 #ifndef CONFIG_SPL_BUILD
 #define CONFIG_USB_FUNCTION_DFU
 #define CONFIG_DFU_MMC
-#define CONFIG_CMD_DFU
 #define DFU_ALT_INFO_MMC \
 	"dfu_alt_info_mmc=" \
 	"boot part 0 1;" \

@@ -146,10 +146,8 @@
  * U-Boot commands
  */
 #define CONFIG_CMD_ENV
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_DIAG
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_SAVES
 #define CONFIG_CMD_I2C
@@ -160,7 +158,6 @@
 
 #ifndef CONFIG_DRIVER_TI_EMAC
 #undef CONFIG_CMD_DHCP
-#undef CONFIG_CMD_MII
 #undef CONFIG_CMD_PING
 #endif
 

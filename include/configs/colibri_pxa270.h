@@ -54,7 +54,6 @@
  * Bootloader Components Configuration
  */
 #define	CONFIG_CMD_ENV
-#define	CONFIG_CMD_MMC
 #define	CONFIG_CMD_USB
 
 /* I2C support */

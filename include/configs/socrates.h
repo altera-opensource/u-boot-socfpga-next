@@ -314,10 +314,8 @@
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_DTT
 #undef CONFIG_CMD_EEPROM
-#define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_SDRAM
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_SNTP
 #define CONFIG_CMD_USB

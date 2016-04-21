@@ -19,13 +19,11 @@
 #include "mx6_common.h"
 
 /* U-Boot Commands */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_BMODE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_EEPROM
 #define CONFIG_CMD_I2C
 #define CONFIG_FAT_WRITE
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PCI
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_SATA

@@ -60,10 +60,8 @@
  * Bootloader Components Configuration
  */
 #define	CONFIG_CMD_ENV
-#define	CONFIG_CMD_MMC
 #define	CONFIG_CMD_SPI
 #define	CONFIG_CMD_USB
-#define	CONFIG_CMD_CACHE
 
 /*
  * MMC Card Configuration
@@ -73,8 +71,6 @@
 #define	CONFIG_GENERIC_MMC
 #define	CONFIG_PXA_MMC_GENERIC
 #define	CONFIG_SYS_MMC_BASE		0xF0000000
-#define	CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 #define	CONFIG_DOS_PARTITION
 #endif
 

@@ -489,7 +489,6 @@ boards, we say we have two, but don't display a message if we find only one. */
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_IRQ
 #define CONFIG_CMD_PING
@@ -499,7 +498,6 @@ boards, we say we have two, but don't display a message if we find only one. */
 #if defined(CONFIG_COMPACT_FLASH) || defined(CONFIG_SATA_SIL3114) \
 				|| defined(CONFIG_USB_STORAGE)
 	#define CONFIG_DOS_PARTITION
-	#define CONFIG_CMD_FAT
 	#define CONFIG_SUPPORT_VFAT
 #endif
 
@@ -512,7 +510,6 @@ boards, we say we have two, but don't display a message if we find only one. */
 #endif
 
 #if defined(CONFIG_SATA_SIL3114) || defined(CONFIG_USB_STORAGE)
-	#define CONFIG_CMD_EXT2
 #endif
 
 #ifdef CONFIG_PCI

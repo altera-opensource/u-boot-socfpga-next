@@ -61,8 +61,6 @@
 /* USB support */
 #if USE_GRUSB
 #define CONFIG_USB_UHCI
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_USB
 #define CONFIG_USB_STORAGE
 /* Enable needed helper functions */

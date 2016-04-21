@@ -54,8 +54,6 @@
 #define CONFIG_SYS_NO_FLASH		/* Declare no flash (NOR/SPI) */
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_USB
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 
 /* Disable DCACHE */
 #define CONFIG_SYS_DCACHE_OFF
@@ -75,7 +73,6 @@
 
 /* PHY configuration */
 #define CONFIG_MII
-#define CONFIG_CMD_MII
 #define CONFIG_RESET_PHY_R
 /* 88E3015 register definition */
 #define PHY_LED_PAR_SEL_REG		22
@@ -113,7 +110,6 @@
 #define CONFIG_ENV_SIZE			0x4000
 #define CONFIG_ENV_OFFSET		0x07C000
 
-#define CONFIG_CMD_ASKENV
 
 #ifdef CONFIG_CMD_USB
 #define CONFIG_USB_EHCI

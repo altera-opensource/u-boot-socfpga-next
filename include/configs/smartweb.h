@@ -172,7 +172,6 @@
 #define CONFIG_USB_GADGET_AT91
 
 /* DFU class support */
-#define CONFIG_CMD_DFU
 #define CONFIG_USB_FUNCTION_DFU
 #define CONFIG_DFU_NAND
 #define CONFIG_USB_GADGET_DOWNLOAD
@@ -229,7 +228,6 @@
 #undef CONFIG_CMD_LOADS
 
 #define CONFIG_CMD_NAND
-#define CONFIG_CMD_FAT
 
 #ifdef CONFIG_MACB
 # define CONFIG_CMD_PING

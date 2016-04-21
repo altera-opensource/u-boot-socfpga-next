@@ -65,9 +65,7 @@
 
 #define CONFIG_MMC
 
-#define CONFIG_CMD_MMC
 #define CONFIG_GENERIC_MMC
-#define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
 
 /*
@@ -84,7 +82,6 @@
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_MII
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE		/* disable vendor parameters protection (serial#, ethaddr) */
@@ -95,7 +92,6 @@
  * Command definition
  ***********************************************************/
 
-#define CONFIG_CMD_BOOTZ
 #undef CONFIG_CMD_IMLS
 
 /* Environment variables */

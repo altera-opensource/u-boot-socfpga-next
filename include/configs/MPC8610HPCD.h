@@ -460,12 +460,10 @@
  */
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_I2C
-#define CONFIG_CMD_MII
 
 #if defined(CONFIG_PCI)
 #define CONFIG_CMD_PCI
 #define CONFIG_CMD_SCSI
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_USB
 #endif
 

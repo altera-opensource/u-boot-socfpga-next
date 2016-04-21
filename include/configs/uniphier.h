@@ -124,12 +124,10 @@
 /* USB */
 #define CONFIG_USB_MAX_CONTROLLER_COUNT		2
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS	4
-#define CONFIG_CMD_FAT
 #define CONFIG_FAT_WRITE
 #define CONFIG_DOS_PARTITION
 
 /* SD/MMC */
-#define CONFIG_CMD_MMC
 #define CONFIG_SUPPORT_EMMC_BOOT
 #define CONFIG_GENERIC_MMC
 
@@ -176,7 +174,6 @@
 		"bootm $fit_addr_r\0" \
 	"__nfsboot=run tftpboot\0"
 #else
-#define CONFIG_CMD_BOOTZ
 #define CONFIG_BOOTFILE			"zImage"
 #define LINUXBOOT_ENV_SETTINGS \
 	"fdt_addr=0x00100000\0" \

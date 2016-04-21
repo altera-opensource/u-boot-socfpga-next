@@ -93,12 +93,10 @@
  * Command line configuration.
  */
 #define CONFIG_CMD_EEPROM
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_IDE
 #define CONFIG_CMD_SNTP
 #define CONFIG_CMD_USB
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DISPLAY

@@ -56,7 +56,6 @@
 #define CONFIG_OMAP3_GPIO_6	/* GPIO160..191 is in GPIO Bank 6 */
 
 /* commands to include */
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_USB
 
 #ifdef CONFIG_NAND

@@ -246,7 +246,6 @@
 /* FMan */
 #ifdef CONFIG_SYS_DPAA_FMAN
 #define CONFIG_FMAN_ENET
-#define CONFIG_CMD_MII
 #define CONFIG_PHYLIB
 #define CONFIG_PHYLIB_10G
 #define CONFIG_PHY_GIGE		/* Include GbE speed/duplex detection */
@@ -285,7 +284,6 @@
 #define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS	2
 #define CONFIG_CMD_USB
 #define CONFIG_USB_STORAGE
-#define CONFIG_CMD_EXT2
 #endif
 
 #include <asm/fsl_secure_boot.h>

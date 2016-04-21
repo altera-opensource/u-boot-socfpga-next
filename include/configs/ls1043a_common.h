@@ -175,7 +175,6 @@
 #endif
 
 /* Command line configuration */
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_PING
@@ -183,8 +182,6 @@
 /*  MMC  */
 #define CONFIG_MMC
 #ifdef CONFIG_MMC
-#define CONFIG_CMD_MMC
-#define CONFIG_CMD_FAT
 #define CONFIG_FSL_ESDHC
 #define CONFIG_SYS_FSL_MMC_HAS_CAPBLT_VS33
 #define CONFIG_GENERIC_MMC

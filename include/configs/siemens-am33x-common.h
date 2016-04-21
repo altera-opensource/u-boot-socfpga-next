@@ -41,8 +41,6 @@
 #define CONFIG_SYS_CACHELINE_SIZE       64
 
 /* commands to include */
-#define CONFIG_CMD_ASKENV
-#define CONFIG_CMD_CACHE
 #define CONFIG_CMD_TIME
 
 
@@ -89,10 +87,7 @@
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_OMAP_HSMMC
-#define CONFIG_CMD_MMC
 #define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 
 #define CONFIG_SPI
 #define CONFIG_OMAP3_SPI
@@ -254,7 +249,6 @@
 /* USB Device Firmware Update support */
 #define CONFIG_USB_FUNCTION_DFU
 #define CONFIG_DFU_NAND
-#define CONFIG_CMD_DFU
 #define CONFIG_SYS_DFU_DATA_BUF_SIZE	(1 << 20)
 #define DFU_MANIFEST_POLL_TIMEOUT	25000
 
@@ -289,7 +283,6 @@
 #define CONFIG_MII
 #define CONFIG_PHY_GIGE
 #define CONFIG_PHYLIB
-#define CONFIG_CMD_MII
 #define CONFIG_BOOTP_DEFAULT
 #define CONFIG_BOOTP_DNS
 #define CONFIG_BOOTP_DNS2

@@ -35,10 +35,8 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	CONFIG_SYS_MPC83xx_ESDHC_ADDR
 #define CONFIG_SYS_FSL_ERRATUM_ESDHC111
 
-#define CONFIG_CMD_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_DOS_PARTITION
-#define CONFIG_CMD_EXT2
 
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_ALT_MEMTEST
@@ -511,7 +509,6 @@ int fpga_gpio_get(unsigned int bus, int pin);
  * Command line configuration.
  */
 #define CONFIG_CMD_I2C
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PCI
 #define CONFIG_CMD_PING
 

@@ -76,14 +76,12 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_CACHE
 
 /*
  * Additional command
  */
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_PING
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_USB
 
 #define CONFIG_SYS_HUSH_PARSER

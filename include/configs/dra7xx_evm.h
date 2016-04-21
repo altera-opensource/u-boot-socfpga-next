@@ -150,7 +150,6 @@
 #define CONFIG_BOOTP_SUBNETMASK
 #define CONFIG_NET_RETRY_COUNT		10
 #define CONFIG_CMD_PING
-#define CONFIG_CMD_MII
 #define CONFIG_DRIVER_TI_CPSW		/* Driver for IP block */
 #define CONFIG_MII			/* Required in net/eth.c */
 #define CONFIG_PHY_GIGE			/* per-board part of CPSW */
@@ -242,7 +241,6 @@
 /* USB Device Firmware Update support */
 #define CONFIG_USB_FUNCTION_DFU
 #define CONFIG_DFU_RAM
-#define CONFIG_CMD_DFU
 
 #define CONFIG_DFU_MMC
 #define CONFIG_DFU_RAM

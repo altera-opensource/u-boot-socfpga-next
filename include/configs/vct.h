@@ -102,7 +102,6 @@
 #if (defined(CONFIG_VCT_PREMIUM) || defined(CONFIG_VCT_PLATINUM)) && \
 	!defined(CONFIG_VCT_SMALL_IMAGE)
 #define CONFIG_CMD_USB
-#define CONFIG_CMD_FAT
 #endif
 
 #if defined(CONFIG_CMD_USB)
@@ -281,18 +280,14 @@ int vct_gpio_get(int pin);
  * (NOR/OneNAND) usage and Linux kernel booting.
  */
 #if defined(CONFIG_VCT_SMALL_IMAGE)
-#undef CONFIG_CMD_ASKENV
 #undef CONFIG_CMD_BEDBUG
-#undef CONFIG_CMD_CACHE
 #undef CONFIG_CMD_DHCP
 #undef CONFIG_CMD_EEPROM
 #undef CONFIG_CMD_EEPROM
-#undef CONFIG_CMD_FAT
 #undef CONFIG_CMD_I2C
 #undef CONFIG_CMD_I2C
 #undef CONFIG_CMD_IRQ
 #undef CONFIG_CMD_LOADY
-#undef CONFIG_CMD_MII
 #undef CONFIG_CMD_PING
 #undef CONFIG_CMD_REGINFO
 #undef CONFIG_CMD_SNTP

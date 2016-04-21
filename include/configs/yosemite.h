@@ -194,8 +194,6 @@
 
 #ifdef CONFIG_440EP
     #define CONFIG_CMD_USB
-    #define CONFIG_CMD_FAT
-    #define CONFIG_CMD_EXT2
 #endif
 
 /*-----------------------------------------------------------------------

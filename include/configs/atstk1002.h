@@ -101,12 +101,8 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MMC
 
 
 #define CONFIG_ATMEL_USART

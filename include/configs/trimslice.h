@@ -34,7 +34,6 @@
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
 #define CONFIG_TEGRA_MMC
-#define CONFIG_CMD_MMC
 
 /* Environment in SPI */
 #define CONFIG_ENV_IS_IN_SPI_FLASH

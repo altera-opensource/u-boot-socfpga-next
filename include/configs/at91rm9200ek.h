@@ -58,7 +58,6 @@
 
 #define CONFIG_BOARD_EARLY_INIT_F
 
-#define CONFIG_CMD_BOOTZ
 
 
 /*
@@ -121,8 +120,6 @@
  * Command line configuration.
  */
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_USB
 

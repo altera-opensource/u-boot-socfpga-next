@@ -13,12 +13,9 @@
 /*
  * Command line configuration.
  */
-#define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_DEFAULTENV_VARS
-#define CONFIG_CMD_GREPENV
 #define CONFIG_CMD_IMMAP
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_EEPROM
 #define CONFIG_CMD_I2C

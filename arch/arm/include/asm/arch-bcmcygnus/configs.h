@@ -31,6 +31,5 @@
 #define CONFIG_PHY_RESET_DELAY 10000 /* PHY reset delay in us*/
 
 #define CONFIG_CMD_PING
-#define CONFIG_CMD_MII
 
 #endif /* __ARCH_CONFIGS_H */

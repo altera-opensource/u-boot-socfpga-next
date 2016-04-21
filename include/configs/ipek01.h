@@ -107,11 +107,9 @@
 #endif
 #define CONFIG_CMD_DATE		/* support for RTC, date/time...*/
 #define CONFIG_CMD_DHCP		/* DHCP Support */
-#define CONFIG_CMD_FAT		/* FAT support */
 #define CONFIG_CMD_I2C		/* I2C serial bus support */
 #define CONFIG_CMD_IDE		/* IDE harddisk support */
 #define CONFIG_CMD_IRQ		/* irqinfo */
-#define CONFIG_CMD_MII		/* MII support */
 #define CONFIG_CMD_PCI		/* pciinfo */
 #define CONFIG_CMD_USB		/* USB Support */
 

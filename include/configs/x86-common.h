@@ -85,8 +85,6 @@
 #ifdef CONFIG_SYS_COREBOOT
 #define CONFIG_CMD_CBFS
 #endif
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_EXT4_WRITE
 #define CONFIG_PARTITION_UUIDS
 
 #define CONFIG_SYS_CONSOLE_INFO_QUIET
@@ -98,7 +96,6 @@
  * Command line configuration.
  */
 #define CONFIG_CMD_DATE
-#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_FPGA_LOADMK
 #define CONFIG_CMD_IO
 #define CONFIG_CMD_IRQ
@@ -108,8 +105,6 @@
 #define CONFIG_CMD_GETTIME
 #define CONFIG_CMD_SCSI
 
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 
 #define CONFIG_CMD_ZBOOT
 

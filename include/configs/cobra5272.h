@@ -122,7 +122,6 @@
  */
 #define CONFIG_CMD_PING
 
-#undef CONFIG_CMD_MII
 
 #ifdef CONFIG_MCFFEC
 #	define CONFIG_MII		1

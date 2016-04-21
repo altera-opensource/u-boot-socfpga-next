@@ -82,7 +82,6 @@
 #define CONFIG_NET_RETRY_COUNT		20
 #define CONFIG_ARP_TIMEOUT		500 /* millisec */
 
-#define CONFIG_CMD_MII
 
 /*
  * BOOTP options
@@ -103,7 +102,6 @@
 #define CONFIG_SDHCI
 #define CONFIG_MMC
 #define CONFIG_GENERIC_MMC
-#define CONFIG_CMD_MMC
 
 /*-----------------------------------------------------------------------
  * File System Configuration
@@ -114,15 +112,10 @@
 #define CONFIG_SUPPORT_VFAT
 #define CONFIG_FS_FAT
 #define CONFIG_FAT_WRITE
-#define CONFIG_CMD_FS_GENERIC
 #define CONFIG_CMD_PART
-#define CONFIG_CMD_FAT
 
 /* EXT4 FS */
 #define CONFIG_FS_EXT4
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_EXT4
-#define CONFIG_CMD_EXT4_WRITE
 
 /* -------------------------------------------------
  * Environment

@@ -55,7 +55,6 @@ Serial console configuration
 #define CONFIG_CMD_EEPROM
 #define CONFIG_CMD_I2C
 #define CONFIG_CMD_JFFS2
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_PCI
 
 #define	CONFIG_TIMESTAMP	1	/* Print image info with timestamp */

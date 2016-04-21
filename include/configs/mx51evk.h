@@ -73,9 +73,7 @@
 
 #define CONFIG_MMC
 
-#define CONFIG_CMD_MMC
 #define CONFIG_GENERIC_MMC
-#define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
 
 /*
@@ -89,11 +87,9 @@
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
-#define CONFIG_CMD_MII
 
 /* USB Configs */
 #define CONFIG_CMD_USB
-#define CONFIG_CMD_FAT
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX5
 #define CONFIG_USB_STORAGE
@@ -126,7 +122,6 @@
 /***********************************************************
  * Command definition
  ***********************************************************/
-#define CONFIG_CMD_BOOTZ
 
 #define CONFIG_CMD_DATE
 

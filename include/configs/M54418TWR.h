@@ -38,13 +38,11 @@
 #define CONFIG_BOOTP_HOSTNAME
 
 /* Command line configuration */
-#define CONFIG_CMD_CACHE
 #undef CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #undef CONFIG_CMD_I2C
 #undef CONFIG_CMD_JFFS2
 #undef CONFIG_CMD_UBI
-#define CONFIG_CMD_MII
 #undef CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO

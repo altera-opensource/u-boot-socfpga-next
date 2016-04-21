@@ -146,7 +146,6 @@
 #endif
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
 #define CONFIG_USB_STORAGE
-#define CONFIG_CMD_FAT
 
 #define CONFIG_SYS_LOAD_ADDR			0x22000000	/* load address */
 

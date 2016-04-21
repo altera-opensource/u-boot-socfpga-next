@@ -326,10 +326,7 @@ extern unsigned long get_sdram_size(void);
  */
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_ERRATA
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_IRQ
-#define CONFIG_CMD_MII
 #define CONFIG_DOS_PARTITION
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO

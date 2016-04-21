@@ -45,8 +45,6 @@
  * Command line configuration.
  */
 #define CONFIG_CMD_BSP
-#define CONFIG_CMD_CACHE
-#define CONFIG_CMD_MII
 #define CONFIG_CMD_REGINFO
 #define CONFIG_CMD_DHCP
 #define CONFIG_BOOTP_SEND_HOSTNAME
