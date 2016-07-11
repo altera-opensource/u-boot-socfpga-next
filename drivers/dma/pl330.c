@@ -2750,236 +2750,21 @@ static irqreturn_t pl330_irq_handler(int irq, void *data)
 	BIT(DMA_SLAVE_BUSWIDTH_4_BYTES) | \
 	BIT(DMA_SLAVE_BUSWIDTH_8_BYTES)
 
-/*
- * Runtime PM callbacks are provided by amba/bus.c driver.
- *
- * It is assumed here that IRQ safe runtime PM is chosen in probe and amba
- * bus driver will only disable/enable the clock in runtime PM callbacks.
- */
-static int __maybe_unused pl330_suspend(struct device *dev)
-{
-	struct amba_device *pcdev = to_amba_device(dev);
-
-	pm_runtime_disable(dev);
-
-	if (!pm_runtime_status_suspended(dev)) {
-		/* amba did not disable the clock */
-		amba_pclk_disable(pcdev);
-	}
-	amba_pclk_unprepare(pcdev);
-
-	return 0;
-}
-
-static int __maybe_unused pl330_resume(struct device *dev)
-{
-	struct amba_device *pcdev = to_amba_device(dev);
-	int ret;
-
-	ret = amba_pclk_prepare(pcdev);
-	if (ret)
-		return ret;
-
-	if (!pm_runtime_status_suspended(dev))
-		ret = amba_pclk_enable(pcdev);
-
-	pm_runtime_enable(dev);
-
-	return ret;
-}
-
-static SIMPLE_DEV_PM_OPS(pl330_pm, pl330_suspend, pl330_resume);
-
 static int
-pl330_probe(struct amba_device *adev, const struct amba_id *id)
+pl330_probe(struct udevice *adev)
 {
-	struct dma_pl330_platdata *pdat;
-	struct pl330_config *pcfg;
-	struct pl330_dmac *pl330;
-	struct dma_pl330_chan *pch, *_p;
-	struct dma_device *pd;
-	struct resource *res;
-	int i, ret, irq;
-	int num_chan;
-	struct device_node *np = adev->dev.of_node;
+	struct dma_dev_priv *uc_priv = dev_get_uclass_priv(adev);
 
-	pdat = dev_get_platdata(&adev->dev);
-
-	ret = dma_set_mask_and_coherent(&adev->dev, DMA_BIT_MASK(32));
-	if (ret)
-		return ret;
-
-	/* Allocate a new DMAC and its Channels */
-	pl330 = devm_kzalloc(&adev->dev, sizeof(*pl330), GFP_KERNEL);
-	if (!pl330)
-		return -ENOMEM;
-
-	pd = &pl330->ddma;
-	pd->dev = &adev->dev;
-
-	pl330->mcbufsz = pdat ? pdat->mcbuf_sz : 0;
-
-	/* get quirk */
-	for (i = 0; i < ARRAY_SIZE(of_quirks); i++)
-		if (of_property_read_bool(np, of_quirks[i].quirk))
-			pl330->quirks |= of_quirks[i].id;
-
-	res = &adev->res;
-	pl330->base = devm_ioremap_resource(&adev->dev, res);
-	if (IS_ERR(pl330->base))
-		return PTR_ERR(pl330->base);
-
-	amba_set_drvdata(adev, pl330);
-
-	for (i = 0; i < AMBA_NR_IRQS; i++) {
-		irq = adev->irq[i];
-		if (irq) {
-			ret = devm_request_irq(&adev->dev, irq,
-					       pl330_irq_handler, 0,
-					       dev_name(&adev->dev), pl330);
-			if (ret)
-				return ret;
-		} else {
-			break;
-		}
-	}
-
-	pcfg = &pl330->pcfg;
-
-	pcfg->periph_id = adev->periphid;
-	ret = pl330_add(pl330);
-	if (ret)
-		return ret;
-
-	INIT_LIST_HEAD(&pl330->desc_pool);
-	spin_lock_init(&pl330->pool_lock);
-
-	/* Create a descriptor pool of default size */
-	if (!add_desc(pl330, GFP_KERNEL, NR_DEFAULT_DESC))
-		dev_warn(&adev->dev, "unable to allocate desc\n");
-
-	INIT_LIST_HEAD(&pd->channels);
-
-	/* Initialize channel parameters */
-	if (pdat)
-		num_chan = max_t(int, pdat->nr_valid_peri, pcfg->num_chan);
-	else
-		num_chan = max_t(int, pcfg->num_peri, pcfg->num_chan);
-
-	pl330->num_peripherals = num_chan;
-
-	pl330->peripherals = kzalloc(num_chan * sizeof(*pch), GFP_KERNEL);
-	if (!pl330->peripherals) {
-		ret = -ENOMEM;
-		goto probe_err2;
-	}
-
-	for (i = 0; i < num_chan; i++) {
-		pch = &pl330->peripherals[i];
-		if (!adev->dev.of_node)
-			pch->chan.private = pdat ? &pdat->peri_id[i] : NULL;
-		else
-			pch->chan.private = adev->dev.of_node;
-
-		INIT_LIST_HEAD(&pch->submitted_list);
-		INIT_LIST_HEAD(&pch->work_list);
-		INIT_LIST_HEAD(&pch->completed_list);
-		spin_lock_init(&pch->lock);
-		pch->thread = NULL;
-		pch->chan.device = pd;
-		pch->dmac = pl330;
-
-		/* Add the channel to the DMAC list */
-		list_add_tail(&pch->chan.device_node, &pd->channels);
-	}
-
-	if (pdat) {
-		pd->cap_mask = pdat->cap_mask;
-	} else {
-		dma_cap_set(DMA_MEMCPY, pd->cap_mask);
-		if (pcfg->num_peri) {
-			dma_cap_set(DMA_SLAVE, pd->cap_mask);
-			dma_cap_set(DMA_CYCLIC, pd->cap_mask);
-			dma_cap_set(DMA_PRIVATE, pd->cap_mask);
-		}
-	}
-
-	pd->device_alloc_chan_resources = pl330_alloc_chan_resources;
-	pd->device_free_chan_resources = pl330_free_chan_resources;
-	pd->device_prep_dma_memcpy = pl330_prep_dma_memcpy;
-	pd->device_prep_dma_cyclic = pl330_prep_dma_cyclic;
-	pd->device_tx_status = pl330_tx_status;
-	pd->device_prep_slave_sg = pl330_prep_slave_sg;
-	pd->device_config = pl330_config;
-	pd->device_pause = pl330_pause;
-	pd->device_terminate_all = pl330_terminate_all;
-	pd->device_issue_pending = pl330_issue_pending;
-	pd->src_addr_widths = PL330_DMA_BUSWIDTHS;
-	pd->dst_addr_widths = PL330_DMA_BUSWIDTHS;
-	pd->directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV);
-	pd->residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
-	pd->max_burst = ((pl330->quirks & PL330_QUIRK_BROKEN_NO_FLUSHP) ?
-			 1 : PL330_MAX_BURST);
-
-	ret = dma_async_device_register(pd);
-	if (ret) {
-		dev_err(&adev->dev, "unable to register DMAC\n");
-		goto probe_err3;
-	}
-
-	if (adev->dev.of_node) {
-		ret = of_dma_controller_register(adev->dev.of_node,
-					 of_dma_pl330_xlate, pl330);
-		if (ret) {
-			dev_err(&adev->dev,
-			"unable to register DMA to the generic DT DMA helpers\n");
-		}
-	}
-
-	adev->dev.dma_parms = &pl330->dma_parms;
-
-	/*
-	 * This is the limit for transfers with a buswidth of 1, larger
-	 * buswidths will have larger limits.
-	 */
-	ret = dma_set_max_seg_size(&adev->dev, 1900800);
-	if (ret)
-		dev_err(&adev->dev, "unable to set the seg size\n");
-
-
-	dev_info(&adev->dev,
-		"Loaded driver for PL330 DMAC-%x\n", adev->periphid);
-	dev_info(&adev->dev,
-		"\tDBUFF-%ux%ubytes Num_Chans-%u Num_Peri-%u Num_Events-%u\n",
-		pcfg->data_buf_dep, pcfg->data_bus_width / 8, pcfg->num_chan,
-		pcfg->num_peri, pcfg->num_events);
-
-	pm_runtime_irq_safe(&adev->dev);
-	pm_runtime_use_autosuspend(&adev->dev);
-	pm_runtime_set_autosuspend_delay(&adev->dev, PL330_AUTOSUSPEND_DELAY);
-	pm_runtime_mark_last_busy(&adev->dev);
-	pm_runtime_put_autosuspend(&adev->dev);
-
-	return 0;
-probe_err3:
-	/* Idle the DMAC */
-	list_for_each_entry_safe(pch, _p, &pl330->ddma.channels,
-			chan.device_node) {
-
-		/* Remove the channel */
-		list_del(&pch->chan.device_node);
-
-		/* Flush the channel */
-		if (pch->thread) {
-			pl330_terminate_all(&pch->chan);
-			pl330_free_chan_resources(&pch->chan);
-		}
-	}
-probe_err2:
-	pl330_del(pl330);
-
+	uc_priv->supported = (DMA_SUPPORTS_MEM_TO_MEM |
+			      DMA_SUPPORTS_MEM_TO_DEV |
+			      DMA_SUPPORTS_DEV_TO_MEM |
+			      DMA_SUPPORTS_DEV_TO_DEV);
 	return ret;
 }
+
+static const struct dma_ops pl330_ops = {
+        .transfer       = ti_edma3_transfer,
+};
 
 static const struct udevice_id pl330_ids[] = {
 	{ .compatible = "arm,pl330" },
@@ -2987,8 +2772,12 @@ static const struct udevice_id pl330_ids[] = {
 };
 
 U_BOOT_DRIVER(pl330_driver) = {
-	.name = "dma-pl330",
+	.name	= "dma-pl330",
+	.id 	= UCLASS_DMA,
 	.of_match = pl330_ids,
+	.ops	= &pl330_ops,
+	.ofdata_to_platdata = pl330_ofdata_to_platdata,
+	.platdata_auto_alloc_size = sizeof(struct dma_pl330_platdata),
 	.probe = pl330_probe,
 	.remove = pl330_remove,
 };
