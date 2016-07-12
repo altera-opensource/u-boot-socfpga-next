@@ -769,37 +769,6 @@ static bool _start(struct pl330_thread *thrd)
 	}
 }
 
-/* Function:	Stop the manager or channel
- * Parameter:	channel0_manager1 -> 0 for channel and 1 for manager
- *		channel_num -> the channel number (only if as_manager=0)
- *		timeout_loops -> number of loop before timeout ocurred
- */
-void pl330_stop(int channel0_manager1, int channel_num, int timeout_loops)
-{
-	u8 insn[6] = {0, 0, 0, 0, 0, 0};
-	/* if fault completing, wait until reach faulting and killing state */
-	if (pl330_getstate(channel0_manager1, channel_num) ==
-		PL330_STATE_FAULT_COMPLETING)
-		UNTIL(channel0_manager1, channel_num,
-			PL330_STATE_FAULTING | PL330_STATE_KILLING);
-
-	/* Return if nothing needs to be done */
-	if (pl330_getstate(channel0_manager1, channel_num) ==
-			PL330_STATE_COMPLETING
-		|| pl330_getstate(channel0_manager1, channel_num) ==
-			PL330_STATE_KILLING
-		|| pl330_getstate(channel0_manager1, channel_num) ==
-			PL330_STATE_STOPPED)
-		return;
-
-	/* kill it to ensure it reach to stop state */
-	_emit_KILL(insn);
-
-	/* Execute the KILL instruction through debug registers */
-	pl330_execute_DBGINSN(insn, channel0_manager1, channel_num,
-		timeout_loops);
-}
-
 /******************************************************************************
 DMA transfer setup (MEM2MEM, MEM2PERIPH or PERIPH2MEM)
 For Peripheral transfer, the FIFO threshold value is expected at
@@ -1084,7 +1053,7 @@ int pl330_transfer_start(struct pl330_transfer_struct *pl330)
 	int timeout_loops = 10000;
 
 	/* Execute the command list */
-	return pl330_start(0, pl330->channel_num, pl330->buf,
+	return _start(0, pl330->channel_num, pl330->buf,
 		timeout_loops);
 }
 
@@ -1100,7 +1069,7 @@ int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
 	UNTIL(0, pl330->channel_num, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
 
 	/* check the state */
-	if (pl330_getstate(0, pl330->channel_num) == PL330_STATE_FAULTING) {
+	if (_state(0, pl330->channel_num) == PL330_STATE_FAULTING) {
 		printf("FAULT Mode: Channel %li Faulting, FTR = 0x%08x, "
 			"CPC = 0x%08x\n", pl330->channel_num,
 			readl(PL330_DMA_BASE + FTC(pl330->channel_num)),
