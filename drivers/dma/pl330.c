@@ -142,6 +142,7 @@ enum pl330_byteswap {
 #define CR1_NUM_ICACHELINES_SHIFT	4
 #define CR1_NUM_ICACHELINES_MASK	0xf
 
+/* Configuration register value */
 #define CRD_DATA_WIDTH_SHIFT	0
 #define CRD_DATA_WIDTH_MASK	0x7
 #define CRD_WR_CAP_SHIFT	4
@@ -155,29 +156,7 @@ enum pl330_byteswap {
 #define CRD_DATA_BUFF_SHIFT	20
 #define CRD_DATA_BUFF_MASK	0x3ff
 
-#define PART			0x330
-#define DESIGNER		0x41
-#define REVISION		0x0
-#define INTEG_CFG		0x0
-#define PERIPH_ID_VAL		((PART << 0) | (DESIGNER << 12))
-
-#define PL330_STATE_STOPPED		(1 << 0)
-#define PL330_STATE_EXECUTING		(1 << 1)
-#define PL330_STATE_WFE			(1 << 2)
-#define PL330_STATE_FAULTING		(1 << 3)
-#define PL330_STATE_COMPLETING		(1 << 4)
-#define PL330_STATE_WFP			(1 << 5)
-#define PL330_STATE_KILLING		(1 << 6)
-#define PL330_STATE_FAULT_COMPLETING	(1 << 7)
-#define PL330_STATE_CACHEMISS		(1 << 8)
-#define PL330_STATE_UPDTPC		(1 << 9)
-#define PL330_STATE_ATBARRIER		(1 << 10)
-#define PL330_STATE_QUEUEBUSY		(1 << 11)
-#define PL330_STATE_INVALID		(1 << 15)
-
-#define PL330_STABLE_STATES (PL330_STATE_STOPPED | PL330_STATE_EXECUTING \
-				| PL330_STATE_WFE | PL330_STATE_FAULTING)
-
+/* Microcode opcode value */
 #define CMD_DMAADDH		0x54
 #define CMD_DMAEND		0x00
 #define CMD_DMAFLUSHP		0x35
@@ -198,6 +177,7 @@ enum pl330_byteswap {
 #define CMD_DMAWFP		0x30
 #define CMD_DMAWMB		0x13
 
+/* the size of opcode plus opcode required settings */
 #define SZ_DMAADDH		3
 #define SZ_DMAEND		1
 #define SZ_DMAFLUSHP		2
@@ -218,28 +198,11 @@ enum pl330_byteswap {
 #define SZ_DMAWMB		1
 #define SZ_DMAGO		6
 
-#define BRST_LEN(ccr)		((((ccr) >> CC_SRCBRSTLEN_SHFT) & 0xf) + 1)
-#define BRST_SIZE(ccr)		(1 << (((ccr) >> CC_SRCBRSTSIZE_SHFT) & 0x7))
-
-#define BYTE_TO_BURST(b, ccr)	((b) / BRST_SIZE(ccr) / BRST_LEN(ccr))
-#define BURST_TO_BYTE(c, ccr)	((c) * BRST_SIZE(ccr) * BRST_LEN(ccr))
-
-/*
- * With 256 bytes, we can do more than 2.5MB and 5MB xfers per req
- * at 1byte/burst for P<->M and M<->M respectively.
- * For typical scenario, at 1word/burst, 10MB and 20MB xfers per req
- * should be enough for P<->M and M<->M respectively.
- */
-#define MCODE_BUFF_PER_REQ	256
-
-/* Use this _only_ to wait on transient states */
-#define UNTIL(t, s)	while (!(_state(t) & (s))) cpu_relax();
-
 #ifdef PL330_DEBUG_MCGEN
 static unsigned cmd_line;
 #define PL330_DBGCMD_DUMP(off, x...)	do { \
-						printk("%x:", cmd_line); \
-						printk(x); \
+						printf("%x:", cmd_line); \
+						printf(x); \
 						cmd_line += off; \
 					} while (0)
 #define PL330_DBGMC_START(addr)		(cmd_line = addr)
@@ -248,77 +211,7 @@ static unsigned cmd_line;
 #define PL330_DBGMC_START(addr)		do {} while (0)
 #endif
 
-/* The number of default descriptors */
-
-#define NR_DEFAULT_DESC	16
-
-/* Delay for runtime PM autosuspend, ms */
-#define PL330_AUTOSUSPEND_DELAY 20
-
-/* Populated by the PL330 core driver for DMA API driver's info */
-struct pl330_config {
-	u32	periph_id;
-#define DMAC_MODE_NS	(1 << 0)
-	unsigned int	mode;
-	unsigned int	data_bus_width:10; /* In number of bits */
-	unsigned int	data_buf_dep:11;
-	unsigned int	num_chan:4;
-	unsigned int	num_peri:6;
-	u32		peri_ns;
-	unsigned int	num_events:6;
-	u32		irq_ns;
-};
-
-/**
- * Request Configuration.
- * The PL330 core does not modify this and uses the last
- * working configuration if the request doesn't provide any.
- *
- * The Client may want to provide this info only for the
- * first request and a request with new settings.
- */
-struct pl330_reqcfg {
-	/* Address Incrementing */
-	unsigned dst_inc:1;
-	unsigned src_inc:1;
-
-	/*
-	 * For now, the SRC & DST protection levels
-	 * and burst size/length are assumed same.
-	 */
-	bool nonsecure;
-	bool privileged;
-	bool insnaccess;
-	unsigned brst_len:5;
-	unsigned brst_size:3; /* in power of 2 */
-
-	enum pl330_cachectrl dcctl;
-	enum pl330_cachectrl scctl;
-	enum pl330_byteswap swap;
-	struct pl330_config *pcfg;
-};
-
-/*
- * One cycle of DMAC operation.
- * There may be more than one xfer in a request.
- */
-struct pl330_xfer {
-	u32 src_addr;
-	u32 dst_addr;
-	/* Size to xfer */
-	u32 bytes;
-};
-
-/* The xfer callbacks are made with one of these arguments. */
-enum pl330_op_err {
-	/* The all xfers in the request were success. */
-	PL330_ERR_NONE,
-	/* If req aborted due to global error. */
-	PL330_ERR_ABORT,
-	/* If req failed due to problem with Channel. */
-	PL330_ERR_FAIL,
-};
-
+/* Enum declaration */
 enum dmamov_dst {
 	SAR = 0,
 	CCR,
@@ -336,236 +229,28 @@ enum pl330_cond {
 	ALWAYS,
 };
 
-struct dma_pl330_desc;
-
-struct _pl330_req {
-	u32 mc_bus;
-	void *mc_cpu;
-	struct dma_pl330_desc *desc;
+/* Structure will be used by _emit_LPEND function */
+struct _arg_LPEND {
+	enum pl330_cond cond;
+	int forever;
+	unsigned loop;
+	u8 bjump;
 };
 
-/* ToBeDone for tasklet */
-struct _pl330_tbd {
-	bool reset_dmac;
-	bool reset_mngr;
-	u8 reset_chan;
+/* Structure will be used by _emit_GO function */
+struct _arg_GO {
+	u8 chan;
+	u32 addr;
+	unsigned ns;
 };
 
-/* A DMAC Thread */
-struct pl330_thread {
-	u8 id;
-	int ev;
-	/* If the channel is not yet acquired by any client */
-	bool free;
-	/* Parent DMAC */
-	struct pl330_dmac *dmac;
-	/* Only two at a time */
-	struct _pl330_req req[2];
-	/* Index of the last enqueued request */
-	unsigned lstenq;
-	/* Index of the last submitted request or -1 if the DMA is stopped */
-	int req_running;
-};
-
-enum pl330_dmac_state {
-	UNINIT,
-	INIT,
-	DYING,
-};
-
-enum desc_status {
-	/* In the DMAC pool */
-	FREE,
-	/*
-	 * Allocated to some channel during prep_xxx
-	 * Also may be sitting on the work_list.
-	 */
-	PREP,
-	/*
-	 * Sitting on the work_list and already submitted
-	 * to the PL330 core. Not more than two descriptors
-	 * of a channel can be BUSY at any time.
-	 */
-	BUSY,
-	/*
-	 * Sitting on the channel work_list but xfer done
-	 * by PL330 core
-	 */
-	DONE,
-};
-
-struct dma_pl330_chan {
-	/* Schedule desc completion */
-	struct tasklet_struct task;
-
-	/* DMA-Engine Channel */
-	struct dma_chan chan;
-
-	/* List of submitted descriptors */
-	struct list_head submitted_list;
-	/* List of issued descriptors */
-	struct list_head work_list;
-	/* List of completed descriptors */
-	struct list_head completed_list;
-
-	/* Pointer to the DMAC that manages this channel,
-	 * NULL if the channel is available to be acquired.
-	 * As the parent, this DMAC also provides descriptors
-	 * to the channel.
-	 */
-	struct pl330_dmac *dmac;
-
-	/* To protect channel manipulation */
-	spinlock_t lock;
-
-	/*
-	 * Hardware channel thread of PL330 DMAC. NULL if the channel is
-	 * available.
-	 */
-	struct pl330_thread *thread;
-
-	/* For D-to-M and M-to-D channels */
-	int burst_sz; /* the peripheral fifo width */
-	int burst_len; /* the number of burst */
-	dma_addr_t fifo_addr;
-
-	/* for cyclic capability */
-	bool cyclic;
-};
-
-struct pl330_dmac {
-	/* DMA-Engine Device */
-	struct dma_device ddma;
-
-	/* Holds info about sg limitations */
-	struct device_dma_parameters dma_parms;
-
-	/* Pool of descriptors available for the DMAC's channels */
-	struct list_head desc_pool;
-	/* To protect desc_pool manipulation */
-	spinlock_t pool_lock;
-
-	/* Size of MicroCode buffers for each channel. */
-	unsigned mcbufsz;
-	/* ioremap'ed address of PL330 registers. */
-	void __iomem	*base;
-	/* Populated by the PL330 core driver during pl330_add */
-	struct pl330_config	pcfg;
-
-	spinlock_t		lock;
-	/* Maximum possible events/irqs */
-	int			events[32];
-	/* BUS address of MicroCode buffer */
-	dma_addr_t		mcode_bus;
-	/* CPU address of MicroCode buffer */
-	void			*mcode_cpu;
-	/* List of all Channel threads */
-	struct pl330_thread	*channels;
-	/* Pointer to the MANAGER thread */
-	struct pl330_thread	*manager;
-	/* To handle bad news in interrupt */
-	struct tasklet_struct	tasks;
-	struct _pl330_tbd	dmac_tbd;
-	/* State of DMAC operation */
-	enum pl330_dmac_state	state;
-	/* Holds list of reqs with due callbacks */
-	struct list_head        req_done;
-
-	/* Peripheral channels connected to this DMAC */
-	unsigned int num_peripherals;
-	struct dma_pl330_chan *peripherals; /* keep at end */
-	int quirks;
-};
-
-static struct pl330_of_quirks {
-	char *quirk;
-	int id;
-} of_quirks[] = {
-	{
-		.quirk = "arm,pl330-broken-no-flushp",
-		.id = PL330_QUIRK_BROKEN_NO_FLUSHP,
-	}
-};
-
-struct dma_pl330_desc {
-	/* To attach to a queue as child */
-	struct list_head node;
-
-	/* Descriptor for the DMA Engine API */
-	struct dma_async_tx_descriptor txd;
-
-	/* Xfer for PL330 core */
-	struct pl330_xfer px;
-
-	struct pl330_reqcfg rqcfg;
-
-	enum desc_status status;
-
-	int bytes_requested;
-	bool last;
-
-	/* The channel which currently holds this desc */
-	struct dma_pl330_chan *pchan;
-
-	enum dma_transfer_direction rqtype;
-	/* Index of peripheral for the xfer. */
-	unsigned peri:5;
-	/* Hook to attach to DMAC's list of reqs with due callback */
-	struct list_head rqd;
-};
-
-struct _xfer_spec {
-	u32 ccr;
-	struct dma_pl330_desc *desc;
-};
-
-static inline bool _queue_empty(struct pl330_thread *thrd)
+/*
+ * Function:	add opcode DMAEND into microcode (end)
+ * Return:	size of opcode
+ * Parameter:	buf -> the buffer which stored the microcode program
+ */
+static inline u32 _emit_END(u8 buf[])
 {
-	return thrd->req[0].desc == NULL && thrd->req[1].desc == NULL;
-}
-
-static inline bool _queue_full(struct pl330_thread *thrd)
-{
-	return thrd->req[0].desc != NULL && thrd->req[1].desc != NULL;
-}
-
-static inline bool is_manager(struct pl330_thread *thrd)
-{
-	return thrd->dmac->manager == thrd;
-}
-
-/* If manager of the thread is in Non-Secure mode */
-static inline bool _manager_ns(struct pl330_thread *thrd)
-{
-	return (thrd->dmac->pcfg.mode & DMAC_MODE_NS) ? true : false;
-}
-
-static inline u32 get_revision(u32 periph_id)
-{
-	return (periph_id >> PERIPH_REV_SHIFT) & PERIPH_REV_MASK;
-}
-
-static inline u32 _emit_ADDH(unsigned dry_run, u8 buf[],
-		enum pl330_dst da, u16 val)
-{
-	if (dry_run)
-		return SZ_DMAADDH;
-
-	buf[0] = CMD_DMAADDH;
-	buf[0] |= (da << 1);
-	*((__le16 *)&buf[1]) = cpu_to_le16(val);
-
-	PL330_DBGCMD_DUMP(SZ_DMAADDH, "\tDMAADDH %s %u\n",
-		da == 1 ? "DA" : "SA", val);
-
-	return SZ_DMAADDH;
-}
-
-static inline u32 _emit_END(unsigned dry_run, u8 buf[])
-{
-	if (dry_run)
-		return SZ_DMAEND;
-
 	buf[0] = CMD_DMAEND;
 
 	PL330_DBGCMD_DUMP(SZ_DMAEND, "\tDMAEND\n");
@@ -573,11 +258,8 @@ static inline u32 _emit_END(unsigned dry_run, u8 buf[])
 	return SZ_DMAEND;
 }
 
-static inline u32 _emit_FLUSHP(unsigned dry_run, u8 buf[], u8 peri)
+static inline u32 _emit_FLUSHP(u8 buf[], u8 peri)
 {
-	if (dry_run)
-		return SZ_DMAFLUSHP;
-
 	buf[0] = CMD_DMAFLUSHP;
 
 	peri &= 0x1f;
@@ -589,11 +271,8 @@ static inline u32 _emit_FLUSHP(unsigned dry_run, u8 buf[], u8 peri)
 	return SZ_DMAFLUSHP;
 }
 
-static inline u32 _emit_LD(unsigned dry_run, u8 buf[],	enum pl330_cond cond)
+static inline u32 _emit_LD(u8 buf[],	enum pl330_cond cond)
 {
-	if (dry_run)
-		return SZ_DMALD;
-
 	buf[0] = CMD_DMALD;
 
 	if (cond == SINGLE)
@@ -607,12 +286,8 @@ static inline u32 _emit_LD(unsigned dry_run, u8 buf[],	enum pl330_cond cond)
 	return SZ_DMALD;
 }
 
-static inline u32 _emit_LDP(unsigned dry_run, u8 buf[],
-		enum pl330_cond cond, u8 peri)
+static inline u32 _emit_LDP(u8 buf[], enum pl330_cond cond, u8 peri)
 {
-	if (dry_run)
-		return SZ_DMALDP;
-
 	buf[0] = CMD_DMALDP;
 
 	if (cond == BURST)
@@ -628,12 +303,8 @@ static inline u32 _emit_LDP(unsigned dry_run, u8 buf[],
 	return SZ_DMALDP;
 }
 
-static inline u32 _emit_LP(unsigned dry_run, u8 buf[],
-		unsigned loop, u8 cnt)
+static inline u32 _emit_LP(u8 buf[], unsigned loop, u8 cnt)
 {
-	if (dry_run)
-		return SZ_DMALP;
-
 	buf[0] = CMD_DMALP;
 
 	if (loop)
@@ -654,16 +325,12 @@ struct _arg_LPEND {
 	u8 bjump;
 };
 
-static inline u32 _emit_LPEND(unsigned dry_run, u8 buf[],
-		const struct _arg_LPEND *arg)
+static inline u32 _emit_LPEND(u8 buf[], const struct _arg_LPEND *arg)
 {
 	enum pl330_cond cond = arg->cond;
 	bool forever = arg->forever;
 	unsigned loop = arg->loop;
 	u8 bjump = arg->bjump;
-
-	if (dry_run)
-		return SZ_DMALPEND;
 
 	buf[0] = CMD_DMALPEND;
 
@@ -689,18 +356,14 @@ static inline u32 _emit_LPEND(unsigned dry_run, u8 buf[],
 	return SZ_DMALPEND;
 }
 
-static inline u32 _emit_KILL(unsigned dry_run, u8 buf[])
+static inline u32 _emit_KILL(u8 buf[])
 {
-	if (dry_run)
-		return SZ_DMAKILL;
-
 	buf[0] = CMD_DMAKILL;
 
 	return SZ_DMAKILL;
 }
 
-static inline u32 _emit_MOV(unsigned dry_run, u8 buf[],
-		enum dmamov_dst dst, u32 val)
+static inline u32 _emit_MOV(u8 buf[], enum dmamov_dst dst, u32 val)
 {
 	if (dry_run)
 		return SZ_DMAMOV;
@@ -717,9 +380,6 @@ static inline u32 _emit_MOV(unsigned dry_run, u8 buf[],
 
 static inline u32 _emit_NOP(unsigned dry_run, u8 buf[])
 {
-	if (dry_run)
-		return SZ_DMANOP;
-
 	buf[0] = CMD_DMANOP;
 
 	PL330_DBGCMD_DUMP(SZ_DMANOP, "\tDMANOP\n");
@@ -727,11 +387,8 @@ static inline u32 _emit_NOP(unsigned dry_run, u8 buf[])
 	return SZ_DMANOP;
 }
 
-static inline u32 _emit_RMB(unsigned dry_run, u8 buf[])
+static inline u32 _emit_RMB(u8 buf[])
 {
-	if (dry_run)
-		return SZ_DMARMB;
-
 	buf[0] = CMD_DMARMB;
 
 	PL330_DBGCMD_DUMP(SZ_DMARMB, "\tDMARMB\n");
@@ -739,11 +396,8 @@ static inline u32 _emit_RMB(unsigned dry_run, u8 buf[])
 	return SZ_DMARMB;
 }
 
-static inline u32 _emit_SEV(unsigned dry_run, u8 buf[], u8 ev)
+static inline u32 _emit_SEV(u8 buf[], u8 ev)
 {
-	if (dry_run)
-		return SZ_DMASEV;
-
 	buf[0] = CMD_DMASEV;
 
 	ev &= 0x1f;
@@ -755,11 +409,8 @@ static inline u32 _emit_SEV(unsigned dry_run, u8 buf[], u8 ev)
 	return SZ_DMASEV;
 }
 
-static inline u32 _emit_ST(unsigned dry_run, u8 buf[], enum pl330_cond cond)
+static inline u32 _emit_ST(u8 buf[], enum pl330_cond cond)
 {
-	if (dry_run)
-		return SZ_DMAST;
-
 	buf[0] = CMD_DMAST;
 
 	if (cond == SINGLE)
@@ -773,12 +424,8 @@ static inline u32 _emit_ST(unsigned dry_run, u8 buf[], enum pl330_cond cond)
 	return SZ_DMAST;
 }
 
-static inline u32 _emit_STP(unsigned dry_run, u8 buf[],
-		enum pl330_cond cond, u8 peri)
+static inline u32 _emit_STP(u8 buf[], enum pl330_cond cond, u8 peri)
 {
-	if (dry_run)
-		return SZ_DMASTP;
-
 	buf[0] = CMD_DMASTP;
 
 	if (cond == BURST)
@@ -794,11 +441,8 @@ static inline u32 _emit_STP(unsigned dry_run, u8 buf[],
 	return SZ_DMASTP;
 }
 
-static inline u32 _emit_STZ(unsigned dry_run, u8 buf[])
+static inline u32 _emit_STZ(u8 buf[])
 {
-	if (dry_run)
-		return SZ_DMASTZ;
-
 	buf[0] = CMD_DMASTZ;
 
 	PL330_DBGCMD_DUMP(SZ_DMASTZ, "\tDMASTZ\n");
@@ -806,12 +450,8 @@ static inline u32 _emit_STZ(unsigned dry_run, u8 buf[])
 	return SZ_DMASTZ;
 }
 
-static inline u32 _emit_WFE(unsigned dry_run, u8 buf[], u8 ev,
-		unsigned invalidate)
+static inline u32 _emit_WFE(u8 buf[], u8 ev, unsigned invalidate)
 {
-	if (dry_run)
-		return SZ_DMAWFE;
-
 	buf[0] = CMD_DMAWFE;
 
 	ev &= 0x1f;
@@ -827,12 +467,8 @@ static inline u32 _emit_WFE(unsigned dry_run, u8 buf[], u8 ev,
 	return SZ_DMAWFE;
 }
 
-static inline u32 _emit_WFP(unsigned dry_run, u8 buf[],
-		enum pl330_cond cond, u8 peri)
+static inline u32 _emit_WFP(u8 buf[], enum pl330_cond cond, u8 peri)
 {
-	if (dry_run)
-		return SZ_DMAWFP;
-
 	buf[0] = CMD_DMAWFP;
 
 	if (cond == SINGLE)
@@ -852,11 +488,8 @@ static inline u32 _emit_WFP(unsigned dry_run, u8 buf[],
 	return SZ_DMAWFP;
 }
 
-static inline u32 _emit_WMB(unsigned dry_run, u8 buf[])
+static inline u32 _emit_WMB(u8 buf[])
 {
-	if (dry_run)
-		return SZ_DMAWMB;
-
 	buf[0] = CMD_DMAWMB;
 
 	PL330_DBGCMD_DUMP(SZ_DMAWMB, "\tDMAWMB\n");
@@ -870,15 +503,12 @@ struct _arg_GO {
 	unsigned ns;
 };
 
-static inline u32 _emit_GO(unsigned dry_run, u8 buf[],
+static inline u32 _emit_GO(u8 buf[],
 		const struct _arg_GO *arg)
 {
 	u8 chan = arg->chan;
 	u32 addr = arg->addr;
 	unsigned ns = arg->ns;
-
-	if (dry_run)
-		return SZ_DMAGO;
 
 	buf[0] = CMD_DMAGO;
 	buf[0] |= (ns << 1);
