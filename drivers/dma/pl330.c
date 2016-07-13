@@ -1255,6 +1255,38 @@ int pl330_transfer_zeroes(struct pl330_transfer_struct *pl330)
 	return 0;
 }
 
+static int pl330_transfer(struct udevice *dev, int direction, void *dst,
+			  void *src, size_t len)
+{
+	struct dma_pl330_platdata *priv = dev_get_priv(dev);
+	struct pl330_transfer_struct *pl330;
+
+	/* Allocate a new DMAC and its Channels */
+	pl330 = devm_kzalloc(dev, sizeof(*pl330), GFP_KERNEL);
+	if (!pl330)
+		return -ENOMEM;
+
+	pl330->dst_addr = (unsigned int) (dst);
+	pl330->src_addr = (unsigned int) (src);
+	pl330->size_byte = len;
+
+	switch(direction) {
+	case DMA_MEM_TO_MEM:
+		pl330->transfer_type = DMA_SUPPORTS_MEM_TO_MEM;
+		break;
+	case DMA_MEM_TO_DEV:
+		pl330->transfer_type = DMA_SUPPORTS_MEM_TO_DEV;
+		break;
+	case DMA_DEV_TO_MEM:
+		pl330->transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
+		break;
+	}
+
+	setup_pl330_transfer(pl330);
+
+	return 0;
+}
+
 static int pl330_ofdata_to_platdata(struct udevice *dev)
 {
 	struct dma_pl330_platdata *priv = dev_get_priv(dev);
@@ -1270,13 +1302,12 @@ static int pl330_probe(struct udevice *adev)
 
 	uc_priv->supported = (DMA_SUPPORTS_MEM_TO_MEM |
 			      DMA_SUPPORTS_MEM_TO_DEV |
-			      DMA_SUPPORTS_DEV_TO_MEM |
-			      DMA_SUPPORTS_DEV_TO_DEV);
+			      DMA_SUPPORTS_DEV_TO_MEM);
 	return ret;
 }
 
 static const struct dma_ops pl330_ops = {
-        .transfer       = ti_edma3_transfer,
+        .transfer       = pl330_transfer,
 };
 
 static const struct udevice_id pl330_ids[] = {
