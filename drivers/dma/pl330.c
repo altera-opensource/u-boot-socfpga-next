@@ -20,6 +20,10 @@
 
 #define PL330_QUIRK_BROKEN_NO_FLUSHP BIT(0)
 
+struct dma_pl330_platdata {
+	u32 base;
+};
+
 enum pl330_cachectrl {
 	CCTRL0,		/* Noncacheable and nonbufferable */
 	CCTRL1,		/* Bufferable only */
@@ -1251,8 +1255,16 @@ int pl330_transfer_zeroes(struct pl330_transfer_struct *pl330)
 	return 0;
 }
 
-static int
-pl330_probe(struct udevice *adev)
+static int pl330_ofdata_to_platdata(struct udevice *dev)
+{
+	struct dma_pl330_platdata *priv = dev_get_priv(dev);
+
+	priv->base = dev_get_addr(dev);
+
+	return 0;
+}
+
+static int pl330_probe(struct udevice *adev)
 {
 	struct dma_dev_priv *uc_priv = dev_get_uclass_priv(adev);
 
