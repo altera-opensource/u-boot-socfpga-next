@@ -11,6 +11,7 @@
 
 /* structure to be passed in for pl330_transfer_x */
 struct pl330_transfer_struct {
+	u32 reg_base;
 	u32 channel_num;
 	u32 src_addr;
 	u32 dst_addr;
