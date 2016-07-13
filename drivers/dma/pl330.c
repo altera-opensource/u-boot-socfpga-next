@@ -1268,6 +1268,8 @@ static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 	if (!pl330)
 		return -ENOMEM;
 
+	pl330->reg_base = priv->base;
+
 	pl330->dst_addr = (unsigned int) (dst);
 	pl330->src_addr = (unsigned int) (src);
 	pl330->size_byte = len;
