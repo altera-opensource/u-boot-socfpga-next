@@ -774,7 +774,8 @@ static bool _start(struct pl330_thread *thrd)
 }
 
 /******************************************************************************
-DMA transfer setup (MEM2MEM, MEM2PERIPH or PERIPH2MEM)
+DMA transfer setup (DMA_SUPPORTS_MEM_TO_MEM, DMA_SUPPORTS_MEM_TO_DEV or
+		    DMA_SUPPORTS_DEV_TO_MEM)
 For Peripheral transfer, the FIFO threshold value is expected at
 2 ^ pl330->brst_size * pl330->brst_len.
 Return:		1 for error or not successful
@@ -789,7 +790,8 @@ single_brst_size -	single transfer size (from 0 - 3)
 brst_len	-	valid from 1 - 16 where each burst can trasfer 1 - 16
 			data chunk (each chunk size equivalent to brst_size)
 peripheral_id	-	assigned peripheral_id, valid from 0 to 31
-transfer_type	-	MEM2MEM, MEM2PERIPH or PERIPH2MEM
+transfer_type	-	DMA_SUPPORTS_MEM_TO_MEM, DMA_SUPPORTS_MEM_TO_DEV or
+			DMA_SUPPORTS_DEV_TO_MEM
 enable_cache1	-	1 for cache enabled for memory
 			(cacheable and bufferable, but do not allocate)
 buf_size	-	sizeof(buf)
@@ -810,9 +812,9 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	cmd_line = 0;
 
 #ifdef PL330_DEBUG_MCGEN
-	if (pl330->transfer_type == MEM2PERIPH)
+	if (pl330->transfer_type == DMA_SUPPORTS_MEM_TO_DEV)
 		puts("INFO: mem2perip");
-	else if (pl330->transfer_type == PERIPH2MEM)
+	else if (pl330->transfer_type == DMA_SUPPORTS_DEV_TO_MEM)
 		puts("INFO: perip2mem");
 	else
 		puts("INFO: mem2mem");
@@ -861,18 +863,18 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	/* DMAMOV DAR, x->dst_addr */
 	off += _emit_MOV(&pl330->buf[off], DAR, pl330->dst_addr);
 	/* DMAFLUSHP P(periheral_id) */
-	if (pl330->transfer_type != MEM2MEM)
+	if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
 		off += _emit_FLUSHP(&pl330->buf[off], pl330->peripheral_id);
 
 	/* Preparing the CCR value */
-	if (pl330->transfer_type == MEM2PERIPH) {
+	if (pl330->transfer_type == DMA_SUPPORTS_MEM_TO_DEV) {
 		reqcfg.dst_inc = 0;	/* disable auto increment */
 		reqcfg.src_inc = 1;	/* enable auto increment */
-	} else if (pl330->transfer_type == PERIPH2MEM) {
+	} else if (pl330->transfer_type == DMA_SUPPORTS_DEV_TO_MEM) {
 		reqcfg.dst_inc = 1;
 		reqcfg.src_inc = 0;
 	} else {
-		/* MEM2MEM */
+		/* DMA_SUPPORTS_MEM_TO_MEM */
 		reqcfg.dst_inc = 1;
 		reqcfg.src_inc = 1;
 	}
@@ -884,10 +886,10 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		reqcfg.dcctl = 0x1;	/* noncacheable but bufferable */
 		reqcfg.scctl = 0x1;
 	} else {
-		if (pl330->transfer_type == MEM2PERIPH) {
+		if (pl330->transfer_type == DMA_SUPPORTS_MEM_TO_DEV) {
 			reqcfg.dcctl = 0x1;
 			reqcfg.scctl = 0x7;	/* cacheable write back */
-		} else if (pl330->transfer_type == PERIPH2MEM) {
+		} else if (pl330->transfer_type == DMA_SUPPORTS_DEV_TO_MEM) {
 			reqcfg.dcctl = 0x7;
 			reqcfg.scctl = 0x1;
 		} else {
@@ -936,7 +938,7 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
 		loopjmp0 = off;
 		/* DMAWFP periheral_id, burst */
-		if (pl330->transfer_type != MEM2MEM)
+		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
 			off += _emit_WFP(&pl330->buf[off], BURST,
 				pl330->peripheral_id);
 		/* DMALD */
@@ -944,7 +946,7 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		/* DMARMB */
 		off += _emit_RMB(&pl330->buf[off]);
 		/* DMASTPB peripheral_id */
-		if (pl330->transfer_type != MEM2MEM)
+		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
 			off += _emit_STP(&pl330->buf[off], BURST,
 				pl330->peripheral_id);
 		else
@@ -1008,7 +1010,7 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
 		loopjmp0 = off;
 		/* DMAWFP peripheral_id, single */
-		if (pl330->transfer_type != MEM2MEM)
+		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
 			off += _emit_WFP(&pl330->buf[off], SINGLE,
 				pl330->peripheral_id);
 		/* DMALD */
@@ -1016,7 +1018,7 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		/* DMARMB */
 		off += _emit_RMB(&pl330->buf[off]);
 		/* DMASTPS peripheral_id */
-		if (pl330->transfer_type != MEM2MEM)
+		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
 			off += _emit_STP(&pl330->buf[off], SINGLE,
 				pl330->peripheral_id);
 		else
