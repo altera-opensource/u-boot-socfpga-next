@@ -23,5 +23,33 @@ struct pl330_transfer_struct {
 	u32 enable_cache1;
 	u32 buf_size;
 	u8 *buf;
-};/* structure to be passed in for pl330_transfer_x */
+};
+
+/*
+ * Request Configuration.
+ * The PL330 core does not modify this and uses the last
+ * working configuration if the request doesn't provide any.
+ *
+ * The Client may want to provide this info only for the
+ * first request and a request with new settings.
+ */
+struct pl330_reqcfg {
+	/* Address Incrementing */
+	unsigned dst_inc:1;
+	unsigned src_inc:1;
+
+	/*
+	 * For now, the SRC & DST protection levels
+	 * and burst size/length are assumed same.
+	 */
+	int nonsecure;
+	int privileged;
+	int insnaccess;
+	unsigned brst_len:5;
+	unsigned brst_size:3; /* in power of 2 */
+
+	enum pl330_dstcachectrl dcctl;
+	enum pl330_srccachectrl scctl;
+	enum pl330_byteswap swap;
+};
 #endif	/* __PL330_H_ */
