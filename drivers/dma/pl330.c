@@ -202,6 +202,9 @@ enum pl330_byteswap {
 #define SZ_DMAWMB		1
 #define SZ_DMAGO		6
 
+/* Use this _only_ to wait on transient states */
+#define UNTIL(t, s)		while (!(_state(t) & (s)))
+
 #ifdef PL330_DEBUG_MCGEN
 static unsigned cmd_line;
 #define PL330_DBGCMD_DUMP(off, x...)	do { \
@@ -644,7 +647,7 @@ static void _stop(struct pl330_transfer_struct *pl330, int channel_num)
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
 
 	if (_state(pl330) == PL330_STATE_FAULT_COMPLETING)
-		UNTIL(thrd, PL330_STATE_FAULTING | PL330_STATE_KILLING);
+		NTIL(thrd, PL330_STATE_FAULTING | PL330_STATE_KILLING);
 
 	/* Return if nothing needs to be done */
 	if (_state(pl330) == PL330_STATE_COMPLETING
