@@ -558,14 +558,14 @@ static inline u32 _prepare_ccr(const struct pl330_reqcfg *rqc)
  * Return:	1 = error / timeout ocurred before idle
  * Parameter:	loop -> number of loop before timeout ocurred
  */
-static int pl330_until_dmac_idle(int loops)
+static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330)
 {
-	void __iomem *regs = thrd->dmac->base;
+	void __iomem *regs = pl330->reg_base;
 	unsigned long loops = msecs_to_loops(5);
 
 	do {
 		/* Until Manager is Idle */
-		if (!(readl(PL330_DMA_BASE + DBGSTATUS) & DBG_BUSY))
+		if (!(readl(regs + DBGSTATUS) & DBG_BUSY))
 			break;
 	} while (--loops);
 
@@ -575,16 +575,16 @@ static int pl330_until_dmac_idle(int loops)
 	return false;
 }
 
-static inline void _execute_DBGINSN(struct pl330_thread *thrd,
-		u8 insn[], bool as_manager)
+static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
+				    u8 insn[], int channel_num, bool as_manager)
 {
-	void __iomem *regs = thrd->dmac->base;
+	void __iomem *regs = pl330->reg_base;
 	u32 val;
 
 	val = (insn[0] << 16) | (insn[1] << 24);
 	if (!as_manager) {
 		val |= (1 << 0);
-		val |= (thrd->id << 8); /* Channel Number */
+		val |= (channel_num << 8); /* Channel Number */
 	}
 	writel(val, regs + DBGINST0);
 
@@ -601,15 +601,12 @@ static inline void _execute_DBGINSN(struct pl330_thread *thrd,
 	writel(0, regs + DBGCMD);
 }
 
-static inline u32 _state(struct pl330_thread *thrd)
+static inline u32 _state(struct pl330_transfer_struct *pl330)
 {
-	void __iomem *regs = thrd->dmac->base;
+	void __iomem *regs = pl330->reg_base;
 	u32 val;
 
-	if (is_manager(thrd))
-		val = readl(regs + DS) & 0xf;
-	else
-		val = readl(regs + CS(thrd->id)) & 0xf;
+	val = readl(regs + CS(thrd->id)) & 0xf;
 
 	switch (val) {
 	case DS_ST_STOP:
@@ -625,139 +622,92 @@ static inline u32 _state(struct pl330_thread *thrd)
 	case DS_ST_FAULT:
 		return PL330_STATE_FAULTING;
 	case DS_ST_ATBRR:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_ATBARRIER;
 	case DS_ST_QBUSY:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_QUEUEBUSY;
 	case DS_ST_WFP:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_WFP;
 	case DS_ST_KILL:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_KILLING;
 	case DS_ST_CMPLT:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_COMPLETING;
 	case DS_ST_FLTCMP:
-		if (is_manager(thrd))
-			return PL330_STATE_INVALID;
-		else
 			return PL330_STATE_FAULT_COMPLETING;
 	default:
 		return PL330_STATE_INVALID;
 	}
 }
 
-static void _stop(struct pl330_thread *thrd)
+static void _stop(struct pl330_transfer_struct *pl330, int channel_num)
 {
-	void __iomem *regs = thrd->dmac->base;
+	void __iomem *regs = pl330->reg_base;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
 
-	if (_state(thrd) == PL330_STATE_FAULT_COMPLETING)
+	if (_state(pl330) == PL330_STATE_FAULT_COMPLETING)
 		UNTIL(thrd, PL330_STATE_FAULTING | PL330_STATE_KILLING);
 
 	/* Return if nothing needs to be done */
-	if (_state(thrd) == PL330_STATE_COMPLETING
-		  || _state(thrd) == PL330_STATE_KILLING
-		  || _state(thrd) == PL330_STATE_STOPPED)
+	if (_state(pl330) == PL330_STATE_COMPLETING
+		  || _state(pl330) == PL330_STATE_KILLING
+		  || _state(pl330) == PL330_STATE_STOPPED)
 		return;
 
 	_emit_KILL(0, insn);
 
 	/* Stop generating interrupts for SEV */
+	/* TODO : find the ev to write to */
 	writel(readl(regs + INTEN) & ~(1 << thrd->ev), regs + INTEN);
 
-	_execute_DBGINSN(thrd, insn, is_manager(thrd));
+	_execute_DBGINSN(insn, 0, channel_num);
 }
 
 /* Start doing req 'idx' of thread 'thrd' */
-static bool _trigger(struct pl330_thread *thrd)
+static bool _trigger(struct pl330_transfer_struct *pl330, int channel_num)
 {
-	void __iomem *regs = thrd->dmac->base;
-	struct _pl330_req *req;
-	struct dma_pl330_desc *desc;
+	void __iomem *regs = pl330->reg_base;
 	struct _arg_GO go;
-	unsigned ns;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
 	int idx;
 
 	/* Return if already ACTIVE */
-	if (_state(thrd) != PL330_STATE_STOPPED)
+	if (_state(pl330) != PL330_STATE_STOPPED)
 		return true;
 
-	idx = 1 - thrd->lstenq;
-	if (thrd->req[idx].desc != NULL) {
-		req = &thrd->req[idx];
-	} else {
-		idx = thrd->lstenq;
-		if (thrd->req[idx].desc != NULL)
-			req = &thrd->req[idx];
-		else
-			req = NULL;
-	}
-
-	/* Return if no request */
-	if (!req)
-		return true;
-
-	/* Return if req is running */
-	if (idx == thrd->req_running)
-		return true;
-
-	desc = req->desc;
-
-	ns = desc->rqcfg.nonsecure ? 1 : 0;
-
-	/* See 'Abort Sources' point-4 at Page 2-25 */
-	if (_manager_ns(thrd) && !ns)
-		dev_info(thrd->dmac->ddma.dev, "%s:%d Recipe for ABORT!\n",
-			__func__, __LINE__);
-
-	go.chan = thrd->id;
+	go.chan = channel_num;
 	go.addr = req->mc_bus;
-	go.ns = ns;
+
+	/* TODO: determine security. Assume secure */
+	go.ns = 0;
 	_emit_GO(0, insn, &go);
 
 	/* Set to generate interrupts for SEV */
+	/* TODO: find ev */
 	writel(readl(regs + INTEN) | (1 << thrd->ev), regs + INTEN);
 
 	/* Only manager can execute GO */
 	_execute_DBGINSN(thrd, insn, true);
 
-	thrd->req_running = idx;
-
 	return true;
 }
 
-static bool _start(struct pl330_thread *thrd)
+static bool _start(struct pl330_transfer_struct *pl330, int channel_num)
 {
-	switch (_state(thrd)) {
+	switch (_state(pl330)) {
 	case PL330_STATE_FAULT_COMPLETING:
-		UNTIL(thrd, PL330_STATE_FAULTING | PL330_STATE_KILLING);
+		UNTIL(pl330, PL330_STATE_FAULTING | PL330_STATE_KILLING);
 
-		if (_state(thrd) == PL330_STATE_KILLING)
-			UNTIL(thrd, PL330_STATE_STOPPED)
+		if (_state(pl330) == PL330_STATE_KILLING)
+			UNTIL(pl300, PL330_STATE_STOPPED)
 
 	case PL330_STATE_FAULTING:
-		_stop(thrd);
+		_stop(pl330);
 
 	case PL330_STATE_KILLING:
 	case PL330_STATE_COMPLETING:
-		UNTIL(thrd, PL330_STATE_STOPPED)
+		UNTIL(pl330, PL330_STATE_STOPPED)
 
 	case PL330_STATE_STOPPED:
-		return _trigger(thrd);
+		return _trigger(pl330);
 
 	case PL330_STATE_WFP:
 	case PL330_STATE_QUEUEBUSY:
