@@ -727,6 +727,47 @@ static bool _start(struct pl330_transfer_struct *pl330, int channel_num)
 }
 
 /******************************************************************************
+DMA run or start
+Return:		1 for error or not successful
+
+channel_num	-	channel number assigned, valid from 0 to 7
+buf		-	buffer handler which will point to the memory
+			allocated for dma microcode
+******************************************************************************/
+static int pl330_transfer_start(struct pl330_transfer_struct *pl330)
+{
+	/* Timeout loop */
+	int timeout_loops = 10000;
+
+	/* Execute the command list */
+	return _start(0, pl330->channel_num, pl330->buf,
+		timeout_loops);
+}
+
+/******************************************************************************
+DMA poll until finish or error
+Return:		1 for error or not successful
+
+channel_num	-	channel number assigned, valid from 0 to 7
+******************************************************************************/
+static int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
+{
+	/* Wait until finish execution to ensure we compared correct result*/
+	UNTIL(0, pl330->channel_num, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
+
+	/* check the state */
+	if (_state(0, pl330->channel_num) == PL330_STATE_FAULTING) {
+		printf("FAULT Mode: Channel %li Faulting, FTR = 0x%08x, "
+			"CPC = 0x%08x\n", pl330->channel_num,
+			readl(PL330_DMA_BASE + FTC(pl330->channel_num)),
+			((u32)readl(PL330_DMA_BASE + CPC(pl330->channel_num))
+				- (u32)pl330->buf));
+		return 1;
+	}
+	return 0;
+}
+
+/******************************************************************************
 DMA transfer setup (DMA_SUPPORTS_MEM_TO_MEM, DMA_SUPPORTS_MEM_TO_DEV or
 		    DMA_SUPPORTS_DEV_TO_MEM)
 For Peripheral transfer, the FIFO threshold value is expected at
@@ -751,7 +792,7 @@ buf_size	-	sizeof(buf)
 buf		-	buffer handler which will point to the memory
 			allocated for dma microcode
 ******************************************************************************/
-int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
+void int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 {
 	/* Variable declaration */
 	int off = 0;			/* buffer offset clear to 0 */
@@ -779,27 +820,14 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		pl330->single_brst_size);
 #endif
 
+	/* for burst, always use the maximum burst size and length */
+	pl330->brst_size = PL330_DMA_MAX_BURST_SIZE;
+	pl330->brst_len = 16;
+	pl330->single_brst_size = 1;
+
 	/* burst_size = 2 ^ brst_size */
 	burst_size = 1 << pl330->brst_size;
 
-	/* Fool proof checking */
-	if (pl330->brst_size < 0 || pl330->brst_size >
-		PL330_DMA_MAX_BURST_SIZE) {
-		printf("ERROR PL330: brst_size must 0-%d (not %li)\n",
-			PL330_DMA_MAX_BURST_SIZE, pl330->brst_size);
-		return 1;
-	}
-	if (pl330->single_brst_size < 0 ||
-		pl330->single_brst_size > PL330_DMA_MAX_BURST_SIZE) {
-		printf("ERROR PL330 : single_brst_size must 0-%d (not %li)\n",
-			PL330_DMA_MAX_BURST_SIZE, pl330->single_brst_size);
-		return 1;
-	}
-	if (pl330->brst_len < 1 || pl330->brst_len > 16) {
-		printf("ERROR PL330 : brst_len must 1-16 (not %li)\n",
-			pl330->brst_len);
-		return 1;
-	}
 	if (pl330->src_addr & (burst_size - 1)) {
 		puts("ERROR PL330 : source address unaligned\n");
 		return 1;
@@ -809,9 +837,6 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		return 1;
 	}
 
-	/* Setup the command list */
-
-	/* DMAMOV SAR, x->src_addr */
 	off += _emit_MOV(&pl330->buf[off], SAR, pl330->src_addr);
 	/* DMAMOV DAR, x->dst_addr */
 	off += _emit_MOV(&pl330->buf[off], DAR, pl330->dst_addr);
@@ -831,25 +856,10 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		reqcfg.dst_inc = 1;
 		reqcfg.src_inc = 1;
 	}
-	if (PL330_DMA_BASE == PL330_DMA_BASE_NON_SECURE)
-		reqcfg.nonsecure = 1;	/* Non Secure mode */
-	else
-		reqcfg.nonsecure = 0;	/* Secure mode */
-	if (pl330->enable_cache1 == 0) {
-		reqcfg.dcctl = 0x1;	/* noncacheable but bufferable */
-		reqcfg.scctl = 0x1;
-	} else {
-		if (pl330->transfer_type == DMA_SUPPORTS_MEM_TO_DEV) {
-			reqcfg.dcctl = 0x1;
-			reqcfg.scctl = 0x7;	/* cacheable write back */
-		} else if (pl330->transfer_type == DMA_SUPPORTS_DEV_TO_MEM) {
-			reqcfg.dcctl = 0x7;
-			reqcfg.scctl = 0x1;
-		} else {
-			reqcfg.dcctl = 0x7;
-			reqcfg.scctl = 0x7;
-		}
-	}
+
+	reqcfg.nonsecure = 0;	/* Secure mode */
+	reqcfg.dcctl = 0x1;	/* noncacheable but bufferable */
+	reqcfg.scctl = 0x1;
 	reqcfg.privileged = 1;		/* 1 - Priviledge  */
 	reqcfg.insnaccess = 0;		/* 0 - data access */
 	reqcfg.swap = 0;		/* 0 - no endian swap */
@@ -995,47 +1005,14 @@ int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	/* DMAEND */
 	off += _emit_END(&pl330->buf[off]);
 
-	return 0;
-}
+	ret = pl330_transfer_start(pl330);
+	if (ret)
+		return ret;
 
-/******************************************************************************
-DMA run or start
-Return:		1 for error or not successful
+	ret = pl330_transfer_finish(pl330);
+	if (ret)
+		return ret;
 
-channel_num	-	channel number assigned, valid from 0 to 7
-buf		-	buffer handler which will point to the memory
-			allocated for dma microcode
-******************************************************************************/
-int pl330_transfer_start(struct pl330_transfer_struct *pl330)
-{
-	/* Timeout loop */
-	int timeout_loops = 10000;
-
-	/* Execute the command list */
-	return _start(0, pl330->channel_num, pl330->buf,
-		timeout_loops);
-}
-
-/******************************************************************************
-DMA poll until finish or error
-Return:		1 for error or not successful
-
-channel_num	-	channel number assigned, valid from 0 to 7
-******************************************************************************/
-int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
-{
-	/* Wait until finish execution to ensure we compared correct result*/
-	UNTIL(0, pl330->channel_num, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
-
-	/* check the state */
-	if (_state(0, pl330->channel_num) == PL330_STATE_FAULTING) {
-		printf("FAULT Mode: Channel %li Faulting, FTR = 0x%08x, "
-			"CPC = 0x%08x\n", pl330->channel_num,
-			readl(PL330_DMA_BASE + FTC(pl330->channel_num)),
-			((u32)readl(PL330_DMA_BASE + CPC(pl330->channel_num))
-				- (u32)pl330->buf));
-		return 1;
-	}
 	return 0;
 }
 
@@ -1071,7 +1048,7 @@ static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 		break;
 	}
 
-	setup_pl330_transfer(pl330);
+	pl330_transfer_setup(pl330);
 
 	return 0;
 }
