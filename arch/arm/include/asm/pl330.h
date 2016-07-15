@@ -9,6 +9,8 @@
 #ifndef	__PL330_H_
 #define	__PL330_H_
 
+#define PL330_DMA_MAX_BURST_SIZE	3
+
 /* structure to be passed in for pl330_transfer_x */
 struct pl330_transfer_struct {
 	u32 reg_base;
