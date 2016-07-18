@@ -28,6 +28,28 @@ struct pl330_transfer_struct {
 	u8 *buf;
 };
 
+enum pl330_srccachectrl {
+	SCCTRL0 = 0,	/* Noncacheable and nonbufferable */
+	SCCTRL1,	/* Bufferable only */
+	SCCTRL2,	/* Cacheable, but do not allocate */
+	SCCTRL3,	/* Cacheable and bufferable, but do not allocate */
+	SINVALID1,
+	SINVALID2,
+	SCCTRL6,	/* Cacheable write-through, allocate on reads only */
+	SCCTRL7,	/* Cacheable write-back, allocate on reads only */
+};
+
+enum pl330_dstcachectrl {
+	DCCTRL0 = 0,	/* Noncacheable and nonbufferable */
+	DCCTRL1,	/* Bufferable only */
+	DCCTRL2,	/* Cacheable, but do not allocate */
+	DCCTRL3,	/* Cacheable and bufferable, but do not allocate */
+	DINVALID1 = 8,
+	DINVALID2,
+	DCCTRL6,	/* Cacheable write-through, allocate on writes only */
+	DCCTRL7,	/* Cacheable write-back, allocate on writes only */
+};
+
 /*
  * Request Configuration.
  * The PL330 core does not modify this and uses the last
