@@ -10,8 +10,9 @@
 
 #include <asm/io.h>
 #include <common.h>
-#include <asm/pl330.h>
 #include <dma.h>
+#include <dm/device.h>
+#include <asm/pl330.h>
 
 #define PL330_MAX_CHAN		8
 #define PL330_MAX_IRQS		32
@@ -22,25 +23,6 @@
 
 struct dma_pl330_platdata {
 	u32 base;
-};
-
-enum pl330_cachectrl {
-	CCTRL0,		/* Noncacheable and nonbufferable */
-	CCTRL1,		/* Bufferable only */
-	CCTRL2,		/* Cacheable, but do not allocate */
-	CCTRL3,		/* Cacheable and bufferable, but do not allocate */
-	INVALID1,	/* AWCACHE = 0x1000 */
-	INVALID2,
-	CCTRL6,		/* Cacheable write-through, allocate on writes only */
-	CCTRL7,		/* Cacheable write-back, allocate on writes only */
-};
-
-enum pl330_byteswap {
-	SWAP_NO,
-	SWAP_2,
-	SWAP_4,
-	SWAP_8,
-	SWAP_16,
 };
 
 /* Register and Bit field Definitions */
@@ -204,9 +186,9 @@ enum pl330_byteswap {
 
 /* Use this _only_ to wait on transient states */
 #define UNTIL(t, s)		while (!(_state(t) & (s)))
+static unsigned cmd_line;
 
 #ifdef PL330_DEBUG_MCGEN
-static unsigned cmd_line;
 #define PL330_DBGCMD_DUMP(off, x...)	do { \
 						printf("%x:", cmd_line); \
 						printf(x); \
@@ -325,13 +307,6 @@ static inline u32 _emit_LP(u8 buf[], unsigned loop, u8 cnt)
 	return SZ_DMALP;
 }
 
-struct _arg_LPEND {
-	enum pl330_cond cond;
-	bool forever;
-	unsigned loop;
-	u8 bjump;
-};
-
 static inline u32 _emit_LPEND(u8 buf[], const struct _arg_LPEND *arg)
 {
 	enum pl330_cond cond = arg->cond;
@@ -372,9 +347,6 @@ static inline u32 _emit_KILL(u8 buf[])
 
 static inline u32 _emit_MOV(u8 buf[], enum dmamov_dst dst, u32 val)
 {
-	if (dry_run)
-		return SZ_DMAMOV;
-
 	buf[0] = CMD_DMAMOV;
 	buf[1] = dst;
 	*((__le32 *)&buf[2]) = cpu_to_le32(val);
@@ -385,7 +357,7 @@ static inline u32 _emit_MOV(u8 buf[], enum dmamov_dst dst, u32 val)
 	return SZ_DMAMOV;
 }
 
-static inline u32 _emit_NOP(unsigned dry_run, u8 buf[])
+static inline u32 _emit_NOP(u8 buf[])
 {
 	buf[0] = CMD_DMANOP;
 
@@ -504,17 +476,10 @@ static inline u32 _emit_WMB(u8 buf[])
 	return SZ_DMAWMB;
 }
 
-struct _arg_GO {
-	u8 chan;
-	u32 addr;
-	unsigned ns;
-};
-
 static inline u32 _emit_GO(u8 buf[],
 		const struct _arg_GO *arg)
 {
 	u8 chan = arg->chan;
-	u32 addr = arg->addr;
 	unsigned ns = arg->ns;
 
 	buf[0] = CMD_DMAGO;
@@ -579,7 +544,7 @@ static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330)
 }
 
 static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
-				    u8 insn[], int channel_num, bool as_manager)
+				    u8 insn[], bool as_manager)
 {
 	void __iomem *regs = pl330->reg_base;
 	u32 val;
@@ -587,7 +552,7 @@ static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
 	val = (insn[0] << 16) | (insn[1] << 24);
 	if (!as_manager) {
 		val |= (1 << 0);
-		val |= (channel_num << 8); /* Channel Number */
+		val |= (pl330->channel_num << 8); /* Channel Number */
 	}
 	writel(val, regs + DBGINST0);
 
@@ -595,7 +560,7 @@ static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
 	writel(val, regs + DBGINST1);
 
 	/* If timed out due to halted state-machine */
-	if (_until_dmac_idle(thrd)) {
+	if (_until_dmac_idle(pl330)) {
 		printf("DMAC halted!\n");
 		return;
 	}
@@ -641,7 +606,7 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 	}
 }
 
-static void _stop(struct pl330_transfer_struct *pl330, int channel_num)
+
 {
 	void __iomem *regs = pl330->reg_base;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
@@ -661,7 +626,7 @@ static void _stop(struct pl330_transfer_struct *pl330, int channel_num)
 	/* TODO : find the ev to write to */
 	writel(readl(regs + INTEN) & ~(1 << thrd->ev), regs + INTEN);
 
-	_execute_DBGINSN(insn, 0, channel_num);
+	_execute_DBGINSN(pl330, insn, 0);
 }
 
 /* Start doing req 'idx' of thread 'thrd' */
@@ -681,14 +646,14 @@ static bool _trigger(struct pl330_transfer_struct *pl330, int channel_num)
 
 	/* TODO: determine security. Assume secure */
 	go.ns = 0;
-	_emit_GO(0, insn, &go);
+	_emit_GO(insn, &go);
 
 	/* Set to generate interrupts for SEV */
 	/* TODO: find ev */
 	writel(readl(regs + INTEN) | (1 << thrd->ev), regs + INTEN);
 
 	/* Only manager can execute GO */
-	_execute_DBGINSN(thrd, insn, true);
+	_execute_DBGINSN(pl330, insn, true);
 
 	return true;
 }
@@ -796,6 +761,7 @@ void int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 {
 	/* Variable declaration */
 	int off = 0;			/* buffer offset clear to 0 */
+	int ret = 0;
 	unsigned loopjmp0, loopjmp1;	/* for DMALPEND */
 	unsigned lcnt0 = 0;		/* loop count 0 */
 	unsigned lcnt1 = 0;		/* loop count 1 */
@@ -1069,7 +1035,7 @@ static int pl330_probe(struct udevice *adev)
 	uc_priv->supported = (DMA_SUPPORTS_MEM_TO_MEM |
 			      DMA_SUPPORTS_MEM_TO_DEV |
 			      DMA_SUPPORTS_DEV_TO_MEM);
-	return ret;
+	return 0;
 }
 
 static const struct dma_ops pl330_ops = {
@@ -1081,13 +1047,12 @@ static const struct udevice_id pl330_ids[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(pl330_driver) = {
-	.name	= "dma-pl330",
+U_BOOT_DRIVER(dma_pl330) = {
+	.name	= "dma_pl330",
 	.id 	= UCLASS_DMA,
 	.of_match = pl330_ids,
 	.ops	= &pl330_ops,
 	.ofdata_to_platdata = pl330_ofdata_to_platdata,
-	.platdata_auto_alloc_size = sizeof(struct dma_pl330_platdata),
 	.probe = pl330_probe,
-	.remove = pl330_remove,
+	.platdata_auto_alloc_size = sizeof(struct dma_pl330_platdata),
 };
