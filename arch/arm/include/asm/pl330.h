@@ -50,6 +50,14 @@ enum pl330_dstcachectrl {
 	DCCTRL7,	/* Cacheable write-back, allocate on writes only */
 };
 
+enum pl330_byteswap {
+	SWAP_NO = 0,
+	SWAP_2,
+	SWAP_4,
+	SWAP_8,
+	SWAP_16,
+};
+
 /*
  * Request Configuration.
  * The PL330 core does not modify this and uses the last
