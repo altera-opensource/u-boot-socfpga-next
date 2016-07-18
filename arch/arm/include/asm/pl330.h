@@ -9,11 +9,25 @@
 #ifndef	__PL330_H_
 #define	__PL330_H_
 
+#define PL330_STATE_STOPPED		(1 << 0)
+#define PL330_STATE_EXECUTING		(1 << 1)
+#define PL330_STATE_WFE			(1 << 2)
+#define PL330_STATE_FAULTING		(1 << 3)
+#define PL330_STATE_COMPLETING		(1 << 4)
+#define PL330_STATE_WFP			(1 << 5)
+#define PL330_STATE_KILLING		(1 << 6)
+#define PL330_STATE_FAULT_COMPLETING	(1 << 7)
+#define PL330_STATE_CACHEMISS		(1 << 8)
+#define PL330_STATE_UPDTPC		(1 << 9)
+#define PL330_STATE_ATBARRIER		(1 << 10)
+#define PL330_STATE_QUEUEBUSY		(1 << 11)
+#define PL330_STATE_INVALID		(1 << 15)
+
 #define PL330_DMA_MAX_BURST_SIZE	3
 
 /* structure to be passed in for pl330_transfer_x */
 struct pl330_transfer_struct {
-	u32 reg_base;
+	void __iomem *reg_base;
 	u32 channel_num;
 	u32 src_addr;
 	u32 dst_addr;
