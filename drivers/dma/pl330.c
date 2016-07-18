@@ -756,7 +756,7 @@ static int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
 	UNTIL(0, pl330->channel_num, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
 
 	/* check the state */
-	if (_state(0, pl330->channel_num) == PL330_STATE_FAULTING) {
+	if (_state(pl330) == PL330_STATE_FAULTING) {
 		printf("FAULT Mode: Channel %li Faulting, FTR = 0x%08x, "
 			"CPC = 0x%08x\n", pl330->channel_num,
 			readl(PL330_DMA_BASE + FTC(pl330->channel_num)),
