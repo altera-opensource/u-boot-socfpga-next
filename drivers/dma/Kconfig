@@ -19,4 +19,8 @@ config TI_EDMA3
 	  This driver support data transfer between memory
 	  regions.
 
+config PL330_DMA
+	bool "PL330 DMA driver"
+	help
+	  Enable the ARM PL330 DMA driver.
 endmenu # menu "DMA Support"
