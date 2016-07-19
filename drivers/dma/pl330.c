@@ -526,10 +526,9 @@ static inline u32 _prepare_ccr(const struct pl330_reqcfg *rqc)
  * Return:	1 = error / timeout ocurred before idle
  * Parameter:	loop -> number of loop before timeout ocurred
  */
-static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330)
+static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330, int loops)
 {
 	void __iomem *regs = pl330->reg_base;
-	unsigned long loops = msecs_to_loops(5);
 
 	do {
 		/* Until Manager is Idle */
@@ -544,7 +543,7 @@ static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330)
 }
 
 static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
-				    u8 insn[], bool as_manager)
+				    u8 insn[], bool as_manager, int loops)
 {
 	void __iomem *regs = pl330->reg_base;
 	u32 val;
@@ -560,7 +559,7 @@ static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
 	writel(val, regs + DBGINST1);
 
 	/* If timed out due to halted state-machine */
-	if (_until_dmac_idle(pl330)) {
+	if (_until_dmac_idle(pl330, loops)) {
 		printf("DMAC halted!\n");
 		return;
 	}
@@ -606,7 +605,7 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 	}
 }
 
-
+static void _stop(struct pl330_transfer_struct *pl330)
 {
 	void __iomem *regs = pl330->reg_base;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
