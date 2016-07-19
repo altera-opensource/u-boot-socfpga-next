@@ -14,13 +14,6 @@
 #include <dm/device.h>
 #include <asm/pl330.h>
 
-#define PL330_MAX_CHAN		8
-#define PL330_MAX_IRQS		32
-#define PL330_MAX_PERI		32
-#define PL330_MAX_BURST         16
-
-#define PL330_QUIRK_BROKEN_NO_FLUSHP BIT(0)
-
 struct dma_pl330_platdata {
 	u32 base;
 };
@@ -480,12 +473,18 @@ static inline u32 _emit_GO(u8 buf[],
 		const struct _arg_GO *arg)
 {
 	u8 chan = arg->chan;
+	u32 addr = arg->addr;
 	unsigned ns = arg->ns;
 
 	buf[0] = CMD_DMAGO;
 	buf[0] |= (ns << 1);
 
 	buf[1] = chan & 0x7;
+
+	*((__le32 *)&buf[2]) = cpu_to_le32(addr);
+
+	return SZ_DMAGO;
+}
 
 /*
  * Function:	Populate the CCR register
@@ -526,7 +525,7 @@ static inline u32 _prepare_ccr(const struct pl330_reqcfg *rqc)
  * Return:	1 = error / timeout ocurred before idle
  * Parameter:	loop -> number of loop before timeout ocurred
  */
-static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330, int loops)
+static int _until_dmac_idle(struct pl330_transfer_struct *pl330, int loops)
 {
 	void __iomem *regs = pl330->reg_base;
 
@@ -543,7 +542,7 @@ static int pl330_until_dmac_idle(struct pl330_transfer_struct *pl330, int loops)
 }
 
 static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
-				    u8 insn[], bool as_manager, int loops)
+				    u8 insn[], bool as_manager, int timeout_loops)
 {
 	void __iomem *regs = pl330->reg_base;
 	u32 val;
@@ -559,7 +558,7 @@ static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
 	writel(val, regs + DBGINST1);
 
 	/* If timed out due to halted state-machine */
-	if (_until_dmac_idle(pl330, loops)) {
+	if (_until_dmac_idle(pl330, timeout_loops)) {
 		printf("DMAC halted!\n");
 		return;
 	}
@@ -573,7 +572,7 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 	void __iomem *regs = pl330->reg_base;
 	u32 val;
 
-	val = readl(regs + CS(thrd->id)) & 0xf;
+	val = readl(regs + CS(pl330->channel_num)) & 0xf;
 
 	switch (val) {
 	case DS_ST_STOP:
@@ -605,9 +604,8 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 	}
 }
 
-static void _stop(struct pl330_transfer_struct *pl330)
+static void _stop(struct pl330_transfer_struct *pl330, int timeout_loops)
 {
-	void __iomem *regs = pl330->reg_base;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
 
 	if (_state(pl330) == PL330_STATE_FAULT_COMPLETING)
@@ -619,45 +617,36 @@ static void _stop(struct pl330_transfer_struct *pl330)
 		  || _state(pl330) == PL330_STATE_STOPPED)
 		return;
 
-	_emit_KILL(0, insn);
+	_emit_KILL(insn);
 
-	/* Stop generating interrupts for SEV */
-	/* TODO : find the ev to write to */
-	writel(readl(regs + INTEN) & ~(1 << thrd->ev), regs + INTEN);
-
-	_execute_DBGINSN(pl330, insn, 0);
+	_execute_DBGINSN(pl330, insn, 0, timeout_loops);
 }
 
-/* Start doing req 'idx' of thread 'thrd' */
-static bool _trigger(struct pl330_transfer_struct *pl330, int channel_num)
+static bool _trigger(struct pl330_transfer_struct *pl330, u8 *buffer,
+		     int timeout_loops)
 {
-	void __iomem *regs = pl330->reg_base;
 	struct _arg_GO go;
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
-	int idx;
 
 	/* Return if already ACTIVE */
 	if (_state(pl330) != PL330_STATE_STOPPED)
 		return true;
 
-	go.chan = channel_num;
-	go.addr = req->mc_bus;
+	go.chan = pl330->channel_num;
+	go.addr = (u32)buffer;
 
 	/* TODO: determine security. Assume secure */
 	go.ns = 0;
 	_emit_GO(insn, &go);
 
-	/* Set to generate interrupts for SEV */
-	/* TODO: find ev */
-	writel(readl(regs + INTEN) | (1 << thrd->ev), regs + INTEN);
-
 	/* Only manager can execute GO */
-	_execute_DBGINSN(pl330, insn, true);
+	_execute_DBGINSN(pl330, insn, true, timeout_loops);
 
 	return true;
 }
 
-static bool _start(struct pl330_transfer_struct *pl330, int channel_num)
+static bool _start(struct pl330_transfer_struct *pl330, int channel_num,
+		   u8 *buffer_address, int timeout_loops)
 {
 	switch (_state(pl330)) {
 	case PL330_STATE_FAULT_COMPLETING:
@@ -667,14 +656,14 @@ static bool _start(struct pl330_transfer_struct *pl330, int channel_num)
 			UNTIL(pl330, PL330_STATE_STOPPED)
 
 	case PL330_STATE_FAULTING:
-		_stop(pl330);
+		_stop(pl330, timeout_loops);
 
 	case PL330_STATE_KILLING:
 	case PL330_STATE_COMPLETING:
 		UNTIL(pl330, PL330_STATE_STOPPED)
 
 	case PL330_STATE_STOPPED:
-		return _trigger(pl330);
+		return _trigger(pl330, buffer_address, timeout_loops);
 
 	case PL330_STATE_WFP:
 	case PL330_STATE_QUEUEBUSY:
@@ -717,14 +706,14 @@ channel_num	-	channel number assigned, valid from 0 to 7
 static int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
 {
 	/* Wait until finish execution to ensure we compared correct result*/
-	UNTIL(0, pl330->channel_num, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
+	UNTIL(pl330, PL330_STATE_STOPPED|PL330_STATE_FAULTING);
 
 	/* check the state */
 	if (_state(pl330) == PL330_STATE_FAULTING) {
-		printf("FAULT Mode: Channel %li Faulting, FTR = 0x%08x, "
+		printf("FAULT Mode: Channel %u Faulting, FTR = 0x%08x, "
 			"CPC = 0x%08x\n", pl330->channel_num,
-			readl(PL330_DMA_BASE + FTC(pl330->channel_num)),
-			((u32)readl(PL330_DMA_BASE + CPC(pl330->channel_num))
+			readl(pl330->reg_base + FTC(pl330->channel_num)),
+			((u32)readl(pl330->reg_base + CPC(pl330->channel_num))
 				- (u32)pl330->buf));
 		return 1;
 	}
@@ -756,7 +745,7 @@ buf_size	-	sizeof(buf)
 buf		-	buffer handler which will point to the memory
 			allocated for dma microcode
 ******************************************************************************/
-void int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
+static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 {
 	/* Variable declaration */
 	int off = 0;			/* buffer offset clear to 0 */
@@ -984,6 +973,7 @@ void int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 			  void *src, size_t len)
 {
+	int ret = 0;
 	struct dma_pl330_platdata *priv = dev_get_priv(dev);
 	struct pl330_transfer_struct *pl330;
 
@@ -1013,9 +1003,9 @@ static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 		break;
 	}
 
-	pl330_transfer_setup(pl330);
+	ret = pl330_transfer_setup(pl330);
 
-	return 0;
+	return ret;
 }
 
 static int pl330_ofdata_to_platdata(struct udevice *dev)
@@ -1038,12 +1028,12 @@ static int pl330_probe(struct udevice *adev)
 }
 
 static const struct dma_ops pl330_ops = {
-        .transfer       = pl330_transfer,
+        .transfer	= pl330_transfer,
 };
 
 static const struct udevice_id pl330_ids[] = {
 	{ .compatible = "arm,pl330" },
-	{ }
+	{ /* sentinel */ }
 };
 
 U_BOOT_DRIVER(dma_pl330) = {
@@ -1053,5 +1043,5 @@ U_BOOT_DRIVER(dma_pl330) = {
 	.ops	= &pl330_ops,
 	.ofdata_to_platdata = pl330_ofdata_to_platdata,
 	.probe = pl330_probe,
-	.platdata_auto_alloc_size = sizeof(struct dma_pl330_platdata),
+	.priv_auto_alloc_size = sizeof(struct dma_pl330_platdata),
 };
