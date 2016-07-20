@@ -84,6 +84,8 @@
  */
 #define CONFIG_ALTERA_SDRAM
 
+#define CONFIG_SPL_DMA
+
 /*
  * EPCS/EPCQx1 Serial Flash Controller
  */

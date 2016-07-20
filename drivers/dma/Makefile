@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-$(CONFIG_DMA) += dma-uclass.o
+obj-$(CONFIG_$(SPL_)DMA) += dma-uclass.o
 
 obj-$(CONFIG_FSLDMAFEC) += MCD_tasksInit.o MCD_dmaApi.o MCD_tasks.o
 obj-$(CONFIG_APBH_DMA) += apbh_dma.o
