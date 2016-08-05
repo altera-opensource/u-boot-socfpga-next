@@ -484,9 +484,10 @@ static inline u32 _emit_GO(u8 buf[],
 	buf[0] |= (ns << 1);
 
 	buf[1] = chan & 0x7;
-
-	*((__le32 *)&buf[2]) = cpu_to_le32(addr);
-
+	buf[2] = addr & 0xFF;
+	buf[3] = (addr >> 8) & 0xFF;
+	buf[4] = (addr >> 16) & 0xFF;
+	buf[5] = (addr >> 24) & 0xFF;
 	return SZ_DMAGO;
 }
 
@@ -552,13 +553,14 @@ static inline void _execute_DBGINSN(struct pl330_transfer_struct *pl330,
 	u32 val;
 
 	val = (insn[0] << 16) | (insn[1] << 24);
-	if (!as_manager) {
+	if (!as_manager)
 		val |= (1 << 0);
-		val |= (pl330->channel_num << 8); /* Channel Number */
-	}
+	val |= (pl330->channel_num << 8); /* Channel Number */
 	writel(val, regs + DBGINST0);
-
-	val = le32_to_cpu(*((__le32 *)&insn[2]));
+	val = insn[2];
+	val = val | (insn[3] << 8);
+	val = val | (insn[4] << 16);
+	val = val | (insn[5] << 24);
 	writel(val, regs + DBGINST1);
 
 	/* If timed out due to halted state-machine */
@@ -635,8 +637,6 @@ static bool _trigger(struct pl330_transfer_struct *pl330, u8 *buffer,
 	u8 insn[6] = {0, 0, 0, 0, 0, 0};
 
 	/* Return if already ACTIVE */
-	if (_state(pl330) != PL330_STATE_STOPPED)
-		return true;
 
 	go.chan = pl330->channel_num;
 	go.addr = (u32)buffer;
@@ -945,9 +945,12 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	off += _emit_END(&pl330->buf[off]);
 
 	ret = pl330_transfer_start(pl330);
+	if (ret)
+		return ret;
 
 	ret = pl330_transfer_finish(pl330);
-	printf("DINH 2 ret=%d\n", ret);
+	if (ret)
+		return ret;
 
 	return 0;
 }
