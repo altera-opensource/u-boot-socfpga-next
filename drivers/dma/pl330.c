@@ -594,17 +594,17 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 	case DS_ST_FAULT:
 		return PL330_STATE_FAULTING;
 	case DS_ST_ATBRR:
-			return PL330_STATE_ATBARRIER;
+		return PL330_STATE_ATBARRIER;
 	case DS_ST_QBUSY:
-			return PL330_STATE_QUEUEBUSY;
+		return PL330_STATE_QUEUEBUSY;
 	case DS_ST_WFP:
-			return PL330_STATE_WFP;
+		return PL330_STATE_WFP;
 	case DS_ST_KILL:
-			return PL330_STATE_KILLING;
+		return PL330_STATE_KILLING;
 	case DS_ST_CMPLT:
-			return PL330_STATE_COMPLETING;
+		return PL330_STATE_COMPLETING;
 	case DS_ST_FLTCMP:
-			return PL330_STATE_FAULT_COMPLETING;
+		return PL330_STATE_FAULT_COMPLETING;
 	default:
 		return PL330_STATE_INVALID;
 	}
@@ -648,11 +648,13 @@ static bool _trigger(struct pl330_transfer_struct *pl330, u8 *buffer,
 	/* Only manager can execute GO */
 	_execute_DBGINSN(pl330, insn, true, timeout_loops);
 
-	return true;
+	return false;
 }
 
 static bool _start(struct pl330_transfer_struct *pl330, int timeout_loops)
 {
+	int ret = 0;
+
 	switch (_state(pl330)) {
 	case PL330_STATE_FAULT_COMPLETING:
 		UNTIL(pl330, PL330_STATE_FAULTING | PL330_STATE_KILLING);
@@ -668,7 +670,9 @@ static bool _start(struct pl330_transfer_struct *pl330, int timeout_loops)
 		UNTIL(pl330, PL330_STATE_STOPPED)
 
 	case PL330_STATE_STOPPED:
-		return _trigger(pl330, pl330->buf, timeout_loops);
+		ret = _trigger(pl330, pl330->buf, timeout_loops);
+		printf("DINH _start ret=%d\n",ret);
+		return ret;
 
 	case PL330_STATE_WFP:
 	case PL330_STATE_QUEUEBUSY:
@@ -786,16 +790,22 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	/* burst_size = 2 ^ brst_size */
 	burst_size = 1 << pl330->brst_size;
 
+	printf("addr of buf %08x\n", &pl330->buf);
+	pl330->src_addr	= &pl330->buf;
+#if 0
 	if (pl330->src_addr & (burst_size - 1)) {
 		puts("ERROR PL330 : source address unaligned\n");
+		printf("pl330->src_addr %08x burst_size %d\n",
+			pl330->src_addr, burst_size);
 		return 1;
 	}
+#endif
 	if (pl330->dst_addr & (burst_size - 1)) {
 		puts("ERROR PL330 : destination address unaligned\n");
 		return 1;
 	}
 
-	off += _emit_MOV(&pl330->buf[off], SAR, pl330->src_addr);
+/*	off += _emit_MOV(&pl330->buf[off], SAR, pl330->src_addr);*/
 	/* DMAMOV DAR, x->dst_addr */
 	off += _emit_MOV(&pl330->buf[off], DAR, pl330->dst_addr);
 	/* DMAFLUSHP P(periheral_id) */
@@ -858,22 +868,8 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		/* DMALP0 */
 		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
 		loopjmp0 = off;
-		/* DMAWFP periheral_id, burst */
-		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
-			off += _emit_WFP(&pl330->buf[off], BURST,
-				pl330->peripheral_id);
-		/* DMALD */
-		off += _emit_LD(&pl330->buf[off], ALWAYS);
-		/* DMARMB */
-		off += _emit_RMB(&pl330->buf[off]);
-		/* DMASTPB peripheral_id */
-		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
-			off += _emit_STP(&pl330->buf[off], BURST,
-				pl330->peripheral_id);
-		else
-			off += _emit_ST(&pl330->buf[off], ALWAYS);
-		/* DMAWMB */
-		off += _emit_WMB(&pl330->buf[off]);
+
+		off += _emit_STZ(&pl330->buf[off]);
 		/* DMALP0END */
 		struct _arg_LPEND lpend;
 		lpend.cond = ALWAYS;
@@ -930,23 +926,8 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		/* DMALP0 */
 		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
 		loopjmp0 = off;
-		/* DMAWFP peripheral_id, single */
-		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
-			off += _emit_WFP(&pl330->buf[off], SINGLE,
-				pl330->peripheral_id);
-		/* DMALD */
-		off += _emit_LD(&pl330->buf[off], ALWAYS);
-		/* DMARMB */
-		off += _emit_RMB(&pl330->buf[off]);
-		/* DMASTPS peripheral_id */
-		if (pl330->transfer_type != DMA_SUPPORTS_MEM_TO_MEM)
-			off += _emit_STP(&pl330->buf[off], SINGLE,
-				pl330->peripheral_id);
-		else
-			off += _emit_ST(&pl330->buf[off], ALWAYS);
-		/* DMAWMB */
-		off += _emit_WMB(&pl330->buf[off]);
-		/* DMALPEND */
+
+		off += _emit_STZ(&pl330->buf[off]);
 		struct _arg_LPEND lpend1;
 		lpend1.cond = ALWAYS;
 		lpend1.forever = 0;
@@ -964,12 +945,9 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	off += _emit_END(&pl330->buf[off]);
 
 	ret = pl330_transfer_start(pl330);
-	if (ret)
-		return ret;
 
 	ret = pl330_transfer_finish(pl330);
-	if (ret)
-		return ret;
+	printf("DINH 2 ret=%d\n", ret);
 
 	return 0;
 }
@@ -1139,7 +1117,7 @@ int pl330_transfer_zeroes(struct pl330_transfer_struct *pl330)
 
 void arm_pl330_transfer(struct pl330_transfer_struct *pl330)
 {
-	pl330_transfer_zeroes(pl330);
+	pl330_transfer_setup(pl330);
 }
 
 #else

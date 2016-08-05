@@ -549,6 +549,8 @@ void sdram_ecc_init(void)
 	pl330.buf_size = sizeof(pl330_buf);
 	pl330.buf = pl330_buf;
 
+	pl330.transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
+
 	pl330.reg_base = SOCFPGA_DMASECURE_ADDRESS;
 
 	puts("SDRAM: Initializing SDRAM ECC\n");
