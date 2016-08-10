@@ -580,8 +580,6 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 
 	val = readl(regs + CS(pl330->channel_num)) & 0xf;
 
-	udelay(1);
-
 	switch (val) {
 	case DS_ST_STOP:
 		return PL330_STATE_STOPPED;
@@ -653,8 +651,6 @@ static bool _trigger(struct pl330_transfer_struct *pl330, u8 *buffer,
 
 static bool _start(struct pl330_transfer_struct *pl330, int timeout_loops)
 {
-	int ret = 0;
-
 	switch (_state(pl330)) {
 	case PL330_STATE_FAULT_COMPLETING:
 		UNTIL(pl330, PL330_STATE_FAULTING | PL330_STATE_KILLING);
@@ -670,9 +666,7 @@ static bool _start(struct pl330_transfer_struct *pl330, int timeout_loops)
 		UNTIL(pl330, PL330_STATE_STOPPED)
 
 	case PL330_STATE_STOPPED:
-		ret = _trigger(pl330, pl330->buf, timeout_loops);
-		printf("DINH _start ret=%d\n",ret);
-		return ret;
+		return _trigger(pl330, pl330->buf, timeout_loops);
 
 	case PL330_STATE_WFP:
 	case PL330_STATE_QUEUEBUSY:
@@ -680,8 +674,6 @@ static bool _start(struct pl330_transfer_struct *pl330, int timeout_loops)
 	case PL330_STATE_UPDTPC:
 	case PL330_STATE_CACHEMISS:
 	case PL330_STATE_EXECUTING:
-		return true;
-
 	case PL330_STATE_WFE: /* For RESUME, nothing yet */
 	default:
 		return false;
@@ -790,7 +782,6 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	/* burst_size = 2 ^ brst_size */
 	burst_size = 1 << pl330->brst_size;
 
-	printf("addr of buf %08x\n", &pl330->buf);
 	pl330->src_addr	= &pl330->buf;
 #if 0
 	if (pl330->src_addr & (burst_size - 1)) {
