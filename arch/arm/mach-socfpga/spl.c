@@ -30,6 +30,8 @@ static struct nic301_registers *nic301_regs =
 	(struct nic301_registers *)SOCFPGA_L3REGS_ADDRESS;
 static struct socfpga_system_manager *sysmgr_regs =
 	(struct socfpga_system_manager *)SOCFPGA_SYSMGR_ADDRESS;
+static const struct socfpga_reset_manager *reset_manager_base =
+	(void *)SOCFPGA_RSTMGR_ADDRESS;
 
 u32 spl_boot_device(void)
 {
@@ -85,6 +87,9 @@ void board_init_f(ulong dummy)
 #endif
 	unsigned long sdram_size;
 	unsigned long reg;
+	u32 rst_mgr_status;
+
+	rst_mgr_status = readl(&reset_manager_base->status);
 
 	/*
 	 * First C code to run. Clear fake OCRAM ECC first as SBE
@@ -179,7 +184,8 @@ void board_init_f(ulong dummy)
 
 	socfpga_bridges_reset(1);
 
-	sdram_ecc_init();
+	if ((rst_mgr_status & RSTMGR_COLDRST_MASK) != 0)
+		sdram_ecc_init();
 
 	/* Configure simple malloc base pointer into RAM. */
 	gd->malloc_base = CONFIG_SYS_TEXT_BASE + (1024 * 1024);
