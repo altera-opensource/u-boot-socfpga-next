@@ -184,7 +184,8 @@ void board_init_f(ulong dummy)
 
 	socfpga_bridges_reset(1);
 
-	if ((rst_mgr_status & RSTMGR_COLDRST_MASK) != 0)
+	printf("rst_mgr_status %08x\n", rst_mgr_status);
+	if ((rst_mgr_status & (RSTMGR_STAT_SWWARMRST_MASK | RSTMGR_STAT_L4WD0RST_MASK)) == 0)
 		sdram_ecc_init();
 
 	/* Configure simple malloc base pointer into RAM. */
