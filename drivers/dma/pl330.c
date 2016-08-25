@@ -580,6 +580,8 @@ static inline u32 _state(struct pl330_transfer_struct *pl330)
 
 	val = readl(regs + CS(pl330->channel_num)) & 0xf;
 
+	udelay(1);
+
 	switch (val) {
 	case DS_ST_STOP:
 		return PL330_STATE_STOPPED;
