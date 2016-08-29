@@ -132,7 +132,10 @@ void board_init_f(ulong dummy)
 
 	debug("Reconfigure Clock Manager\n");
 	/* reconfigure the PLLs */
-	cm_basic_init(cm_default_cfg);
+	if ((rst_mgr_status & (RSTMGR_STAT_SWWARMRST_MASK | RSTMGR_STAT_L4WD0RST_MASK)) == 0)
+		cm_basic_init(cm_default_cfg, 0);
+	else
+		cm_basic_init(cm_default_cfg, 1);
 
 	/* Enable bootrom to configure IOs. */
 	sysmgr_config_warmrstcfgio(1);
