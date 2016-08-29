@@ -55,6 +55,14 @@ void socfpga_per_reset_all(void)
 	writel(0xffffffff, &reset_manager_base->per2_mod_reset);
 }
 
+void socfpga_per_reset_all_except_sdr(void)
+{
+	const u32 l4wd0 = (1 << RSTMGR_RESET(SOCFPGA_RESET(L4WD0)) |
+			   1 << RSTMGR_RESET(SOCFPGA_RESET(SDR)));
+
+	writel(~l4wd0, &reset_manager_base->per_mod_reset);
+	writel(0xffffffff, &reset_manager_base->per2_mod_reset);
+}
 /*
  * Write the reset manager register to cause reset
  */

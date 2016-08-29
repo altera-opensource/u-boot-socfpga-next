@@ -120,7 +120,11 @@ void board_init_f(ulong dummy)
 	sys_mgr_frzctrl_freeze_req();
 
 	/* Put everything into reset but L4WD0. */
-	socfpga_per_reset_all();
+	if ((rst_mgr_status & (RSTMGR_STAT_SWWARMRST_MASK | RSTMGR_STAT_L4WD0RST_MASK)) == 0)
+		socfpga_per_reset_all();
+	else
+		socfpga_per_reset_all_except_sdr();
+
 	/* Put FPGA bridges into reset too. */
 	socfpga_bridges_reset(1);
 
