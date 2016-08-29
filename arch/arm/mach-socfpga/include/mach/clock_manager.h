@@ -57,7 +57,7 @@ struct cm_config {
 	uint32_t s2fuser2clk;
 };
 
-void cm_basic_init(const struct cm_config * const cfg);
+void cm_basic_init(const struct cm_config * const cfg, bool skip);
 
 struct socfpga_clock_manager_main_pll {
 	u32	vco;

@@ -88,7 +88,7 @@ static void cm_write_with_phase(uint32_t value,
  * Ungate clocks
  */
 
-void cm_basic_init(const struct cm_config * const cfg)
+void cm_basic_init(const struct cm_config * const cfg, bool skip)
 {
 	unsigned long end;
 
@@ -112,7 +112,8 @@ void cm_basic_init(const struct cm_config * const cfg)
 		CLKMGR_MAINPLLGRP_EN_L4MPCLK_MASK,
 		&clock_manager_base->main_pll.en);
 
-	writel(0, &clock_manager_base->sdr_pll.en);
+	if (!skip)
+		writel(0, &clock_manager_base->sdr_pll.en);
 
 	/* now we can gate off the rest of the peripheral clocks */
 	writel(0, &clock_manager_base->per_pll.en);
@@ -128,9 +129,10 @@ void cm_basic_init(const struct cm_config * const cfg)
 	writel(CLKMGR_PERPLLGRP_VCO_RESET_VALUE &
 	       ~CLKMGR_PERPLLGRP_VCO_REGEXTSEL_MASK,
 	       &clock_manager_base->per_pll.vco);
-	writel(CLKMGR_SDRPLLGRP_VCO_RESET_VALUE &
-	       ~CLKMGR_SDRPLLGRP_VCO_REGEXTSEL_MASK,
-	       &clock_manager_base->sdr_pll.vco);
+	if (!skip)
+		writel(CLKMGR_SDRPLLGRP_VCO_RESET_VALUE &
+		       ~CLKMGR_SDRPLLGRP_VCO_REGEXTSEL_MASK,
+		       &clock_manager_base->sdr_pll.vco);
 
 	/*
 	 * The clocks to the flash devices and the L4_MAIN clocks can
@@ -156,7 +158,9 @@ void cm_basic_init(const struct cm_config * const cfg)
 	 */
 	writel(cfg->main_vco_base, &clock_manager_base->main_pll.vco);
 	writel(cfg->peri_vco_base, &clock_manager_base->per_pll.vco);
-	writel(cfg->sdram_vco_base, &clock_manager_base->sdr_pll.vco);
+
+	if (!skip)
+		writel(cfg->sdram_vco_base, &clock_manager_base->sdr_pll.vco);
 
 	/*
 	 * Time starts here. Must wait 7 us from
@@ -215,8 +219,9 @@ void cm_basic_init(const struct cm_config * const cfg)
 	       &clock_manager_base->per_pll.vco);
 
 	/* sdram pll vco */
-	writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN,
-	       &clock_manager_base->sdr_pll.vco);
+	if (!skip)
+		writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN,
+		       &clock_manager_base->sdr_pll.vco);
 
 	/* L3 MP and L3 SP */
 	writel(cfg->maindiv, &clock_manager_base->main_pll.maindiv);
@@ -238,17 +243,19 @@ void cm_basic_init(const struct cm_config * const cfg)
 	cm_wait_for_lock(LOCKED_MASK);
 
 	/* write the sdram clock counters before toggling outreset all */
-	writel(cfg->ddrdqsclk & CLKMGR_SDRPLLGRP_DDRDQSCLK_CNT_MASK,
-	       &clock_manager_base->sdr_pll.ddrdqsclk);
+	if (!skip) {
+		writel(cfg->ddrdqsclk & CLKMGR_SDRPLLGRP_DDRDQSCLK_CNT_MASK,
+		       &clock_manager_base->sdr_pll.ddrdqsclk);
 
-	writel(cfg->ddr2xdqsclk & CLKMGR_SDRPLLGRP_DDR2XDQSCLK_CNT_MASK,
-	       &clock_manager_base->sdr_pll.ddr2xdqsclk);
+		writel(cfg->ddr2xdqsclk & CLKMGR_SDRPLLGRP_DDR2XDQSCLK_CNT_MASK,
+		       &clock_manager_base->sdr_pll.ddr2xdqsclk);
 
-	writel(cfg->ddrdqclk & CLKMGR_SDRPLLGRP_DDRDQCLK_CNT_MASK,
-	       &clock_manager_base->sdr_pll.ddrdqclk);
+		writel(cfg->ddrdqclk & CLKMGR_SDRPLLGRP_DDRDQCLK_CNT_MASK,
+		       &clock_manager_base->sdr_pll.ddrdqclk);
 
-	writel(cfg->s2fuser2clk & CLKMGR_SDRPLLGRP_S2FUSER2CLK_CNT_MASK,
-	       &clock_manager_base->sdr_pll.s2fuser2clk);
+		writel(cfg->s2fuser2clk & CLKMGR_SDRPLLGRP_S2FUSER2CLK_CNT_MASK,
+		       &clock_manager_base->sdr_pll.s2fuser2clk);
+	}
 
 	/*
 	 * after locking, but before taking out of bypass
@@ -267,9 +274,10 @@ void cm_basic_init(const struct cm_config * const cfg)
 	       &clock_manager_base->per_pll.vco);
 
 	/* assert sdram outresetall */
-	writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN|
-		CLKMGR_SDRPLLGRP_VCO_OUTRESETALL,
-		&clock_manager_base->sdr_pll.vco);
+	if (!skip)
+		writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN|
+			CLKMGR_SDRPLLGRP_VCO_OUTRESETALL,
+			&clock_manager_base->sdr_pll.vco);
 
 	/* deassert main outresetall */
 	writel(mainvco & ~CLKMGR_MAINPLLGRP_VCO_OUTRESETALL_MASK,
@@ -280,29 +288,31 @@ void cm_basic_init(const struct cm_config * const cfg)
 	       &clock_manager_base->per_pll.vco);
 
 	/* deassert sdram outresetall */
-	writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN,
-	       &clock_manager_base->sdr_pll.vco);
+	if (!skip) {
+		writel(cfg->sdram_vco_base | CLKMGR_MAINPLLGRP_VCO_EN,
+		       &clock_manager_base->sdr_pll.vco);
 
-	/*
-	 * now that we've toggled outreset all, all the clocks
-	 * are aligned nicely; so we can change any phase.
-	 */
-	cm_write_with_phase(cfg->ddrdqsclk,
-			    (uint32_t)&clock_manager_base->sdr_pll.ddrdqsclk,
-			    CLKMGR_SDRPLLGRP_DDRDQSCLK_PHASE_MASK);
+		/*
+		 * now that we've toggled outreset all, all the clocks
+		 * are aligned nicely; so we can change any phase.
+		 */
+		cm_write_with_phase(cfg->ddrdqsclk,
+				    (uint32_t)&clock_manager_base->sdr_pll.ddrdqsclk,
+				    CLKMGR_SDRPLLGRP_DDRDQSCLK_PHASE_MASK);
 
-	/* SDRAM DDR2XDQSCLK */
-	cm_write_with_phase(cfg->ddr2xdqsclk,
-			    (uint32_t)&clock_manager_base->sdr_pll.ddr2xdqsclk,
-			    CLKMGR_SDRPLLGRP_DDR2XDQSCLK_PHASE_MASK);
+		/* SDRAM DDR2XDQSCLK */
+		cm_write_with_phase(cfg->ddr2xdqsclk,
+				    (uint32_t)&clock_manager_base->sdr_pll.ddr2xdqsclk,
+				    CLKMGR_SDRPLLGRP_DDR2XDQSCLK_PHASE_MASK);
 
-	cm_write_with_phase(cfg->ddrdqclk,
-			    (uint32_t)&clock_manager_base->sdr_pll.ddrdqclk,
-			    CLKMGR_SDRPLLGRP_DDRDQCLK_PHASE_MASK);
+		cm_write_with_phase(cfg->ddrdqclk,
+				    (uint32_t)&clock_manager_base->sdr_pll.ddrdqclk,
+				    CLKMGR_SDRPLLGRP_DDRDQCLK_PHASE_MASK);
 
-	cm_write_with_phase(cfg->s2fuser2clk,
-			    (uint32_t)&clock_manager_base->sdr_pll.s2fuser2clk,
-			    CLKMGR_SDRPLLGRP_S2FUSER2CLK_PHASE_MASK);
+		cm_write_with_phase(cfg->s2fuser2clk,
+				    (uint32_t)&clock_manager_base->sdr_pll.s2fuser2clk,
+				    CLKMGR_SDRPLLGRP_S2FUSER2CLK_PHASE_MASK);
+	}
 
 	/* Take all three PLLs out of bypass when safe mode is cleared. */
 	cm_write_bypass(0);
