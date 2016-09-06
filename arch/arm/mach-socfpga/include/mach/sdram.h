@@ -11,7 +11,6 @@
 unsigned long sdram_calculate_size(void);
 int sdram_mmr_init_full(unsigned int sdr_phy_reg);
 int sdram_calibration_full(void);
-int sdram_check_self_refresh_seq(void);
 
 const struct socfpga_sdram_config *socfpga_get_sdram_config(void);
 
@@ -302,17 +301,8 @@ struct socfpga_sdram_misc_config {
 /* Register template: sdr::ctrlgrp::dramintr                               */
 #define SDR_CTRLGRP_DRAMINTR_INTREN_LSB 0
 #define SDR_CTRLGRP_DRAMINTR_INTREN_MASK 0x00000001
-/* Register: sdr.ctrlgrp.lowpwreq					*/
-#define SDR_CTRLGRP_LOWPWREQ_SELFRSHREQ_LSB 3
-#define SDR_CTRLGRP_LOWPWREQ_SELFRSHREQ_MASK 0x00000008
-#define SDR_CTRLGRP_LOWPWREQ_SELFRSHREQ_ENABLED 0x1
-#define SDR_CTRLGRP_LOWPWREQ_SELFRSHREQ_DISABLED 0x0
 #define SDR_CTRLGRP_LOWPWREQ_SELFRFSHMASK_LSB 4
 #define SDR_CTRLGRP_LOWPWREQ_SELFRFSHMASK_MASK 0x00000030
-#define SDR_CTRLGRP_LOWPWREQ_SELFRFSHMASK_BOTH_CHIPS 0x3
-/* Register template: sdr::ctrlgrp::lowpwrack                              */
-#define SDR_CTRLGRP_LOWPWRACK_SELFRFSHACK_LSB 1
-#define SDR_CTRLGRP_LOWPWRACK_SELFRFSHACK_MASK 0x00000002
 /* Register template: sdr::ctrlgrp::staticcfg                              */
 #define SDR_CTRLGRP_STATICCFG_APPLYCFG_LSB 3
 #define SDR_CTRLGRP_STATICCFG_APPLYCFG_MASK 0x00000008

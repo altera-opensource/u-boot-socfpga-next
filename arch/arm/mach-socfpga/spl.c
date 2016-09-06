@@ -32,8 +32,6 @@ static struct socfpga_system_manager *sysmgr_regs =
 	(struct socfpga_system_manager *)SOCFPGA_SYSMGR_ADDRESS;
 static const struct socfpga_reset_manager *reset_manager_base =
 	(void *)SOCFPGA_RSTMGR_ADDRESS;
-static struct socfpga_sdr_ctrl *sdr_ctrl =
-	(struct socfpga_sdr_ctrl *)SDR_CTRLGRP_ADDRESS;
 
 u32 spl_boot_device(void)
 {
@@ -172,33 +170,17 @@ void board_init_f(ulong dummy)
 	/* enable console uart printing */
 	preloader_console_init();
 
-	if ((rst_mgr_status & (RSTMGR_STAT_SWWARMRST_MASK | RSTMGR_STAT_L4WD0RST_MASK)) == 0) {
-		if (sdram_mmr_init_full(0xffffffff) != 0) {
-			puts("SDRAM init failed.\n");
-			hang();
-		}
-
-		printf("SDRAM: Calibrating PHY\n");
-		/* SDRAM calibration */
-		if (sdram_calibration_full() == 0) {
-			puts("SDRAM calibration failed.\n");
-			hang();
-		}
-	} else {
-		u32 sdr_phy_reg;
-
-		sdr_phy_reg = readl(&sdr_ctrl->phy_ctrl0);
-		printf("DINH sdc_phy_reg %08x\n", sdr_phy_reg);
-
-		if (sdram_mmr_init_full(sdr_phy_reg) != 0)
-			hang();
-		printf("DINH done sdram_mmr_init_full\n");
-		if (sdram_check_self_refresh_seq() != 0) {
-			printf("SDRAM: Self refresh issue detected. Performing Warm reset ...\n");
-			reset_cpu(0);
-		}
+	if (sdram_mmr_init_full(0xffffffff) != 0) {
+		puts("SDRAM init failed.\n");
+		hang();
 	}
-		
+
+	debug("SDRAM: Calibrating PHY\n");
+	/* SDRAM calibration */
+	if (sdram_calibration_full() == 0) {
+		puts("SDRAM calibration failed.\n");
+		hang();
+	}
 
 	sdram_size = sdram_calculate_size();
 	debug("SDRAM: %ld MiB\n", sdram_size >> 20);
