@@ -144,18 +144,20 @@ void board_init_f(ulong dummy)
 		cm_basic_init(cm_default_cfg, 1);
 
 	/* Enable bootrom to configure IOs. */
-	sysmgr_config_warmrstcfgio(1);
+	if ((rst_mgr_status & (RSTMGR_STAT_SWWARMRST_MASK | RSTMGR_STAT_L4WD0RST_MASK)) == 0) {
+		sysmgr_config_warmrstcfgio(1);
 
-	/* configure the IOCSR / IO buffer settings */
-	if (scan_mgr_configure_iocsr())
-		hang();
+		/* configure the IOCSR / IO buffer settings */
+		if (scan_mgr_configure_iocsr())
+			hang();
 
-	sysmgr_config_warmrstcfgio(0);
+		sysmgr_config_warmrstcfgio(0);
 
-	/* configure the pin muxing through system manager */
-	sysmgr_config_warmrstcfgio(1);
-	sysmgr_pinmux_init();
-	sysmgr_config_warmrstcfgio(0);
+		/* configure the pin muxing through system manager */
+		sysmgr_config_warmrstcfgio(1);
+		sysmgr_pinmux_init();
+		sysmgr_config_warmrstcfgio(0);
+	}
 
 #endif /* CONFIG_SOCFPGA_VIRTUAL_TARGET */
 
@@ -176,7 +178,7 @@ void board_init_f(ulong dummy)
 			hang();
 		}
 
-		debug("SDRAM: Calibrating PHY\n");
+		printf("SDRAM: Calibrating PHY\n");
 		/* SDRAM calibration */
 		if (sdram_calibration_full() == 0) {
 			puts("SDRAM calibration failed.\n");
