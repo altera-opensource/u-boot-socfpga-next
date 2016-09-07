@@ -158,8 +158,10 @@ int uclass_find_device(enum uclass_id id, int index, struct udevice **devp)
 	ret = uclass_get(id, &uc);
 	if (ret)
 		return ret;
-	if (list_empty(&uc->dev_head))
+	if (list_empty(&uc->dev_head)) {
+		puts("uclass_find_device list_empty\n");
 		return -ENODEV;
+	}
 
 	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
 		if (!index--) {
@@ -331,6 +333,8 @@ int uclass_get_device(enum uclass_id id, int index, struct udevice **devp)
 {
 	struct udevice *dev;
 	int ret;
+
+	printf("uclass_get_device %d %d %08x\n", id, index, devp);
 
 	*devp = NULL;
 	ret = uclass_find_device(id, index, &dev);

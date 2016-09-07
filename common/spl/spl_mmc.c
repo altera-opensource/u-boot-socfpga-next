@@ -131,8 +131,11 @@ static int spl_mmc_find_device(struct mmc **mmcp, u32 boot_device)
 		return err;
 	}
 
+	puts("DINH 1\n");
 #ifdef CONFIG_DM_MMC
+	printf("DINH 2 %08x %08x\n", mmc_dev, &dev);
 	err = uclass_get_device(UCLASS_MMC, mmc_dev, &dev);
+	printf("DINH 2 %d\n", err);
 	if (!err)
 		*mmcp = mmc_get_mmc_dev(dev);
 #else
