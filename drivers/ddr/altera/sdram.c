@@ -34,7 +34,7 @@ static struct socfpga_system_manager *sysmgr_regs =
 static struct socfpga_sdr_ctrl *sdr_ctrl =
 	(struct socfpga_sdr_ctrl *)SDR_CTRLGRP_ADDRESS;
 
-u8 pl330_buf[2500];
+u8 pl330_buf[2000];
 /**
  * get_errata_rows() - Up the number of DRAM rows to cover entire address space
  * @cfg:	SDRAM controller configuration data
@@ -543,7 +543,7 @@ void sdram_ecc_init(void)
 {
 	struct pl330_transfer_struct pl330;
 
-	pl330.dst_addr = 0x00000000;
+	pl330.dst_addr = 0x00002000;
 	pl330.size_byte = sdram_calculate_size();
 	pl330.channel_num = 0;
 	pl330.buf_size = sizeof(pl330_buf);
