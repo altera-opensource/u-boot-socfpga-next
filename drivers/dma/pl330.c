@@ -785,20 +785,11 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	burst_size = 1 << pl330->brst_size;
 
 	pl330->src_addr	= &pl330->buf;
-#if 0
-	if (pl330->src_addr & (burst_size - 1)) {
-		puts("ERROR PL330 : source address unaligned\n");
-		printf("pl330->src_addr %08x burst_size %d\n",
-			pl330->src_addr, burst_size);
-		return 1;
-	}
-#endif
 	if (pl330->dst_addr & (burst_size - 1)) {
 		puts("ERROR PL330 : destination address unaligned\n");
 		return 1;
 	}
 
-/*	off += _emit_MOV(&pl330->buf[off], SAR, pl330->src_addr);*/
 	/* DMAMOV DAR, x->dst_addr */
 	off += _emit_MOV(&pl330->buf[off], DAR, pl330->dst_addr);
 	/* DMAFLUSHP P(periheral_id) */
@@ -845,14 +836,6 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 		data_size_byte = data_size_byte -
 			(burst_size * pl330->brst_len * lcnt0 * lcnt1);
 
-#ifdef PL330_DEBUG_MCGEN
-		printf("Transferring 0x%08lx Remain 0x%08x\n", (burst_size *
-			pl330->brst_len * lcnt0 * lcnt1), data_size_byte);
-		printf("Running burst - brst_size=2^%li, brst_len=%li, "
-			"lcnt0=%i, lcnt1=%i\n", pl330->brst_size,
-			pl330->brst_len, lcnt0, lcnt1);
-#endif
-
 		if (lcnt1) {
 			/* DMALP1 */
 			off += _emit_LP(&pl330->buf[off], 1, lcnt1);
@@ -901,14 +884,6 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 			"data. Please ensure correct single burst size\n");
 
 	if (lcnt0) {
-#ifdef PL330_DEBUG_MCGEN
-		printf("Transferring 0x%08lx Remain 0x%08x\n", (burst_size *
-			pl330->brst_len * lcnt0 * lcnt1), data_size_byte);
-		printf("Running single - brst_size=2^%li, brst_len=%li, "
-			"lcnt0=%i\n", pl330->brst_size, pl330->brst_len,
-			lcnt0);
-#endif
-
 		/* Preparing the CCR value */
 		reqcfg.brst_len = pl330->brst_len;	/* DMA burst length */
 		reqcfg.brst_size = pl330->brst_size;	/* DMA burst size */
@@ -948,176 +923,13 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	return 0;
 }
 
-int pl330_transfer_zeroes(struct pl330_transfer_struct *pl330)
-{
-	/* Variable declaration */
-	int off = 0;			/* buffer offset clear to 0 */
-	unsigned loopjmp0, loopjmp1;	/* for DMALPEND */
-	unsigned lcnt0 = 0;		/* loop count 0 */
-	unsigned lcnt1 = 0;		/* loop count 1 */
-	unsigned burst_size = 0;
-	unsigned data_size_byte = pl330->size_byte;
-	u32 ccr = 0;			/* Channel Control Register */
-	struct pl330_reqcfg reqcfg;
-	int ret = 0;
-	cmd_line = 0;
-
-#ifdef PL330_DEBUG_MCGEN
-	puts("INFO: Write zeroes -> ");
-	printf("0x%08x size=0x%08x\n", pl330->dst_addr, data_size_byte);
-#endif
-
-	/* for burst, always use the maximum burst size and length */
-	pl330->brst_size = PL330_DMA_MAX_BURST_SIZE;
-	pl330->brst_len = 16;
-	pl330->single_brst_size = 1;
-
-	/* burst_size = 2 ^ brst_size */
-	burst_size = 1 << pl330->brst_size;
-
-	/* Setup the command list */
-	/* DMAMOV DAR, x->dst_addr */
-	off += _emit_MOV(&pl330->buf[off], DAR, pl330->dst_addr);
-
-	/* Preparing the CCR value */
-	reqcfg.dst_inc = 1;	/* enable auto increment */
-	reqcfg.src_inc = 0;	/* disable auto increment (not applicable) */
-	reqcfg.dcctl = 0x1;	/* noncacheable but bufferable */
-	reqcfg.scctl = 0x1;	/* noncacheable and bufferable */
-	reqcfg.privileged = 1;			/* 1 - Priviledge  */
-	reqcfg.insnaccess = 0;			/* 0 - data access */
-	reqcfg.swap = 0;			/* 0 - no endian swap */
-	reqcfg.nonsecure = 0;		/* Secure mode */
-	reqcfg.brst_len = pl330->brst_len;	/* DMA burst length */
-	reqcfg.brst_size = pl330->brst_size;	/* DMA burst size */
-	/* Preparing the CCR value */
-	ccr = _prepare_ccr(&reqcfg);
-	/* DMAMOV CCR, ccr */
-	off += _emit_MOV(&pl330->buf[off], CCR, ccr);
-
-	/* BURST */
-	/* Can initiate a burst? */
-	while (data_size_byte >= burst_size * pl330->brst_len) {
-		lcnt0 = data_size_byte / (burst_size * pl330->brst_len);
-		lcnt1 = 0;
-		if (lcnt0 >= 256 * 256)
-			lcnt0 = lcnt1 = 256;
-		else if (lcnt0 >= 256) {
-			lcnt1 = lcnt0 / 256;
-			lcnt0 = 256;
-		}
-		data_size_byte = data_size_byte -
-			(burst_size * pl330->brst_len * lcnt0 * lcnt1);
-
-#ifdef PL330_DEBUG_MCGEN
-		printf("Transferring 0x%08lx Remain 0x%08x\n", (burst_size *
-			pl330->brst_len * lcnt0 * lcnt1), data_size_byte);
-		printf("Running burst - brst_size=2^%li, brst_len=%li, "
-			"lcnt0=%i, lcnt1=%i\n", pl330->brst_size,
-			pl330->brst_len, lcnt0, lcnt1);
-#endif
-
-		if (lcnt1) {
-			/* DMALP1 */
-			off += _emit_LP(&pl330->buf[off], 1, lcnt1);
-			loopjmp1 = off;
-		}
-		/* DMALP0 */
-		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
-		loopjmp0 = off;
-		/* DMALSTZ */
-		off += _emit_STZ(&pl330->buf[off]);
-		/* DMALP0END */
-		struct _arg_LPEND lpend;
-		lpend.cond = ALWAYS;
-		lpend.forever = 0;
-		lpend.loop = 0;		/* loop cnt 0 */
-		lpend.bjump = off - loopjmp0;
-		off += _emit_LPEND(&pl330->buf[off], &lpend);
-		/* DMALP1END */
-		if (lcnt1) {
-			struct _arg_LPEND lpend;
-			lpend.cond = ALWAYS;
-			lpend.forever = 0;
-			lpend.loop = 1;		/* loop cnt 1*/
-			lpend.bjump = off - loopjmp1;
-			off += _emit_LPEND(&pl330->buf[off], &lpend);
-		}
-		/* ensure the microcode don't exceed buffer size */
-		if (off > pl330->buf_size) {
-			puts("ERROR PL330 : Exceed buffer size\n");
-			return 1;
-		}
-	}
-
-	/* SINGLE */
-	pl330->brst_size = pl330->single_brst_size;
-	pl330->brst_len = 1;
-	/* burst_size = 2 ^ brst_size */
-	burst_size = (1 << pl330->brst_size);
-	lcnt0 = data_size_byte / (burst_size * pl330->brst_len);
-
-	/* ensure all data will be transfered */
-	data_size_byte = data_size_byte -
-		(burst_size * pl330->brst_len * lcnt0);
-	if (data_size_byte)
-		puts("ERROR PL330 : Detected the possibility of untransfered"
-			"data. Please ensure correct single burst size\n");
-
-	if (lcnt0) {
-#ifdef PL330_DEBUG_MCGEN
-		printf("Transferring 0x%08lx Remain 0x%08x\n", (burst_size *
-			pl330->brst_len * lcnt0), data_size_byte);
-		printf("Running single - brst_size=2^%li, brst_len=%li, "
-			"lcnt0=%i\n", pl330->brst_size, pl330->brst_len,
-			lcnt0);
-#endif
-
-		/* Preparing the CCR value */
-		reqcfg.brst_len = pl330->brst_len;	/* DMA burst length */
-		reqcfg.brst_size = pl330->brst_size;	/* DMA burst size */
-		ccr = _prepare_ccr(&reqcfg);
-		/* DMAMOV CCR, ccr */
-		off += _emit_MOV(&pl330->buf[off], CCR, ccr);
-
-		/* DMALP0 */
-		off += _emit_LP(&pl330->buf[off], 0, lcnt0);
-		loopjmp0 = off;
-		/* DMALSTZ */
-		off += _emit_STZ(&pl330->buf[off]);
-		/* DMALPEND */
-		struct _arg_LPEND lpend1;
-		lpend1.cond = ALWAYS;
-		lpend1.forever = 0;
-		lpend1.loop = 0;	/* loop cnt 0 */
-		lpend1.bjump = off - loopjmp0;
-		off += _emit_LPEND(&pl330->buf[off], &lpend1);
-		/* ensure the microcode don't exceed buffer size */
-		if (off > pl330->buf_size) {
-			puts("ERROR PL330 : Exceed buffer size\n");
-			return 1;
-		}
-	}
-
-	/* DMAEND */
-	off += _emit_END(&pl330->buf[off]);
-
-	ret = pl330_transfer_start(pl330);
-
-        ret = pl330_transfer_finish(pl330);
-
-	return 0;
-}
-
 #ifndef CONFIG_DMA
-
 void arm_pl330_transfer(struct pl330_transfer_struct *pl330)
 {
 	pl330_transfer_setup(pl330);
 }
 
 #else
-
 static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 			  void *src, size_t len)
 {
