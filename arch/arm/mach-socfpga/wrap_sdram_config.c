@@ -5,8 +5,10 @@
  */
 
 #include <common.h>
+#include <dma.h>
 #include <errno.h>
 #include <asm/arch/sdram.h>
+#include <asm/pl330.h>
 
 /* Board-specific header. */
 #include <qts/sdram_config.h>
@@ -310,3 +312,29 @@ const struct socfpga_sdram_misc_config *socfpga_get_sdram_misc_config(void)
 {
 	return &misc_config;
 }
+
+#if (CONFIG_HPS_SDR_CTRLCFG_CTRLCFG_ECCEN == 1)
+/* init the whole SDRAM ECC bit */
+void sdram_ecc_init(void)
+{
+	struct pl330_transfer_struct pl330;
+	u8 pl330_buf[2000];
+
+	pl330.dst_addr = CONFIG_SYS_SDRAM_BASE;
+	pl330.len = sdram_calculate_size();
+	pl330.channel_num = 0;
+	pl330.buf_size = sizeof(pl330_buf);
+	pl330.buf = pl330_buf;
+
+	pl330.transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
+	pl330.reg_base = (void __iomem *)SOCFPGA_DMASECURE_ADDRESS;
+
+	puts("SDRAM: Initializing SDRAM ECC\n");
+
+	arm_pl330_transfer(&pl330);
+
+	printf("SDRAM: ECC initialized successfully\n");
+}
+#else
+void sdram_ecc_init(void) {}
+#endif
