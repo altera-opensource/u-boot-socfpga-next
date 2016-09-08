@@ -6,11 +6,13 @@
 #include <common.h>
 #include <errno.h>
 #include <div64.h>
+#include <dma.h>
 #include <watchdog.h>
 #include <asm/arch/fpga_manager.h>
 #include <asm/arch/sdram.h>
 #include <asm/arch/system_manager.h>
 #include <asm/io.h>
+#include <asm/pl330.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -534,3 +536,27 @@ unsigned long sdram_calculate_size(void)
 
 	return temp;
 }
+
+#ifdef CONFIG_HPS_SDR_CTRLCFG_CTRLCFG_ECCEN
+/* init the whole SDRAM ECC bit */
+void sdram_ecc_init(void)
+{
+	struct pl330_transfer_struct pl330;
+	u8 pl330_buf[2000];
+
+	pl330.dst_addr = CONFIG_SYS_SDRAM_BASE;
+	pl330.len = sdram_calculate_size();
+	pl330.channel_num = 0;
+	pl330.buf_size = sizeof(pl330_buf);
+	pl330.buf = pl330_buf;
+
+	pl330.transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
+	pl330.reg_base = (void __iomem *)SOCFPGA_DMASECURE_ADDRESS;
+
+	puts("SDRAM: Initializing SDRAM ECC\n");
+
+	arm_pl330_transfer(&pl330);
+
+	printf("SDRAM: ECC initialized successfully\n");
+}
+#endif
