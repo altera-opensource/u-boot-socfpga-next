@@ -49,7 +49,8 @@ int dma_memcpy(void *dst, void *src, size_t len)
 	const struct dma_ops *ops;
 	int ret;
 
-	ret = dma_get_device(DMA_SUPPORTS_MEM_TO_MEM, &dev);
+	ret = dma_get_device(DMA_SUPPORTS_MEM_TO_MEM |
+			     DMA_SUPPORTS_DEV_TO_MEM, &dev);
 	if (ret < 0)
 		return ret;
 
