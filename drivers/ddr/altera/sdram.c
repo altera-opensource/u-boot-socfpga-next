@@ -6,11 +6,13 @@
 #include <common.h>
 #include <errno.h>
 #include <div64.h>
+#include <dma.h>
 #include <watchdog.h>
 #include <asm/arch/fpga_manager.h>
 #include <asm/arch/sdram.h>
 #include <asm/arch/system_manager.h>
 #include <asm/io.h>
+#include <asm/pl330.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -32,6 +34,7 @@ static struct socfpga_system_manager *sysmgr_regs =
 static struct socfpga_sdr_ctrl *sdr_ctrl =
 	(struct socfpga_sdr_ctrl *)SDR_CTRLGRP_ADDRESS;
 
+u8 pl330_buf[2000];
 /**
  * get_errata_rows() - Up the number of DRAM rows to cover entire address space
  * @cfg:	SDRAM controller configuration data
@@ -533,4 +536,25 @@ unsigned long sdram_calculate_size(void)
 	debug("%s returns %ld\n", __func__, temp);
 
 	return temp;
+}
+
+/* init the whole SDRAM ECC bit */
+void sdram_ecc_init(void)
+{
+	struct pl330_transfer_struct pl330;
+
+	pl330.dst_addr = 0x00002000;
+	pl330.len = sdram_calculate_size();
+	pl330.channel_num = 0;
+	pl330.buf_size = sizeof(pl330_buf);
+	pl330.buf = pl330_buf;
+
+	pl330.transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
+	pl330.reg_base = SOCFPGA_DMASECURE_ADDRESS;
+
+	puts("SDRAM: Initializing SDRAM ECC\n");
+
+	arm_pl330_transfer(&pl330);
+
+	printf("SDRAM: ECC initialized successfully\n");
 }
