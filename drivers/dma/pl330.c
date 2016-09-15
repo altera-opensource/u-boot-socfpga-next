@@ -706,7 +706,7 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	unsigned lcnt0 = 0;		/* loop count 0 */
 	unsigned lcnt1 = 0;		/* loop count 1 */
 	unsigned burst_size = 0;
-	unsigned data_size_byte = pl330->size_byte;
+	unsigned len = pl330->size_byte;
 	u32 ccr = 0;			/* Channel Control Register */
 	struct pl330_reqcfg reqcfg;
 
@@ -758,8 +758,8 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 
 	/* BURST */
 	/* Can initiate a burst? */
-	while (data_size_byte >= burst_size * pl330->brst_len) {
-		lcnt0 = data_size_byte / (burst_size * pl330->brst_len);
+	while (len >= burst_size * pl330->brst_len) {
+		lcnt0 = len / (burst_size * pl330->brst_len);
 		lcnt1 = 0;
 		if (lcnt0 >= 256 * 256)
 			lcnt0 = lcnt1 = 256;
@@ -767,7 +767,7 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 			lcnt1 = lcnt0 / 256;
 			lcnt0 = 256;
 		}
-		data_size_byte = data_size_byte -
+		len = len -
 			(burst_size * pl330->brst_len * lcnt0 * lcnt1);
 
 		if (lcnt1) {
@@ -808,12 +808,12 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	pl330->brst_len = 1;
 	/* burst_size = 2 ^ brst_size */
 	burst_size = (1 << pl330->brst_size);
-	lcnt0 = data_size_byte / (burst_size * pl330->brst_len);
+	lcnt0 = len / (burst_size * pl330->brst_len);
 
 	/* ensure all data will be transfered */
-	data_size_byte = data_size_byte -
+	len = len -
 		(burst_size * pl330->brst_len * lcnt0);
-	if (data_size_byte)
+	if (len)
 		puts("ERROR PL330 : Detected the possibility of untransfered"
 			"data. Please ensure correct single burst size\n");
 
