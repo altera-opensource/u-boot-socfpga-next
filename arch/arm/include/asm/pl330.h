@@ -31,7 +31,7 @@ struct pl330_transfer_struct {
 	u32 channel_num;
 	u32 src_addr;
 	u32 dst_addr;
-	u32 size_byte;
+	u32 len;
 	u32 brst_size;
 	u32 single_brst_size;
 	u32 brst_len;

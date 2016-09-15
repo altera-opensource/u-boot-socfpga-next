@@ -684,7 +684,7 @@ static int pl330_transfer_finish(struct pl330_transfer_struct *pl330)
  * channel_num	-	channel number assigned, valid from 0 to 7
  * src_addr	-	address to transfer from / source
  * dst_addr	-	address to transfer to / destination
- * size_byte	-	number of bytes to be transferred
+ * len	-	number of bytes to be transferred
  * brst_size	-	valid from 0 - 3
  *			where 0 = 1 (2 ^ 0) bytes and 3 = 8 bytes (2 ^ 3)
  * single_brst_size -	single transfer size (from 0 - 3)
@@ -706,7 +706,7 @@ static int pl330_transfer_setup(struct pl330_transfer_struct *pl330)
 	unsigned lcnt0 = 0;		/* loop count 0 */
 	unsigned lcnt1 = 0;		/* loop count 1 */
 	unsigned burst_size = 0;
-	unsigned len = pl330->size_byte;
+	unsigned len = pl330->len;
 	u32 ccr = 0;			/* Channel Control Register */
 	struct pl330_reqcfg reqcfg;
 
@@ -880,7 +880,7 @@ static int pl330_transfer(struct udevice *dev, int direction, void *dst,
 
 	pl330->dst_addr = (unsigned int) (dst);
 	pl330->src_addr = (unsigned int) (src);
-	pl330->size_byte = len;
+	pl330->len = len;
 
 	/* channel 1 */
 	pl330->channel_num = 1;
