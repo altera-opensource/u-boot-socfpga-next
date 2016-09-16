@@ -34,7 +34,6 @@ static struct socfpga_system_manager *sysmgr_regs =
 static struct socfpga_sdr_ctrl *sdr_ctrl =
 	(struct socfpga_sdr_ctrl *)SDR_CTRLGRP_ADDRESS;
 
-u8 pl330_buf[2000];
 /**
  * get_errata_rows() - Up the number of DRAM rows to cover entire address space
  * @cfg:	SDRAM controller configuration data
@@ -542,6 +541,7 @@ unsigned long sdram_calculate_size(void)
 void sdram_ecc_init(void)
 {
 	struct pl330_transfer_struct pl330;
+	u8 pl330_buf[2000];
 
 	pl330.dst_addr = 0x00002000;
 	pl330.len = sdram_calculate_size();
@@ -550,9 +550,11 @@ void sdram_ecc_init(void)
 	pl330.buf = pl330_buf;
 
 	pl330.transfer_type = DMA_SUPPORTS_DEV_TO_MEM;
-	pl330.reg_base = SOCFPGA_DMASECURE_ADDRESS;
+	pl330.reg_base = (void __iomem *)SOCFPGA_DMASECURE_ADDRESS;
 
 	puts("SDRAM: Initializing SDRAM ECC\n");
+	printf("SDRAM: gd->fdt_blob=%08x new_fdt=%08x fdt_size=%d\n", &gd->fdt_blob, &gd->new_fdt,
+		&gd->fdt_size);
 
 	arm_pl330_transfer(&pl330);
 
