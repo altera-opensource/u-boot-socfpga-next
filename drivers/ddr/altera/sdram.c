@@ -543,7 +543,7 @@ void sdram_ecc_init(void)
 	struct pl330_transfer_struct pl330;
 	u8 pl330_buf[2000];
 
-	pl330.dst_addr = 0x00002000;
+	pl330.dst_addr = CONFIG_SYS_SDRAM_BASE;
 	pl330.len = sdram_calculate_size();
 	pl330.channel_num = 0;
 	pl330.buf_size = sizeof(pl330_buf);
@@ -553,8 +553,6 @@ void sdram_ecc_init(void)
 	pl330.reg_base = (void __iomem *)SOCFPGA_DMASECURE_ADDRESS;
 
 	puts("SDRAM: Initializing SDRAM ECC\n");
-	printf("SDRAM: gd->fdt_blob=%08x new_fdt=%08x fdt_size=%d\n", &gd->fdt_blob, &gd->new_fdt,
-		&gd->fdt_size);
 
 	arm_pl330_transfer(&pl330);
 
