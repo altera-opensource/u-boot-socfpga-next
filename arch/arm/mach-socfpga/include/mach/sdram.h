@@ -20,12 +20,6 @@ const struct socfpga_sdram_rw_mgr_config *socfpga_get_sdram_rwmgr_config(void);
 const struct socfpga_sdram_io_config *socfpga_get_sdram_io_config(void);
 const struct socfpga_sdram_misc_config *socfpga_get_sdram_misc_config(void);
 
-#ifdef CONFIG_HPS_SDR_CTRLCFG_CTRLCFG_ECCEN
-void sdram_ecc_init(void);
-#else
-static inline void sdram_ecc_init(void) {}
-#endif
-
 #define SDR_CTRLGRP_ADDRESS	(SOCFPGA_SDR_ADDRESS | 0x5000)
 
 struct socfpga_sdr_ctrl {

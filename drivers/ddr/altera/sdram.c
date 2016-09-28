@@ -537,7 +537,7 @@ unsigned long sdram_calculate_size(void)
 	return temp;
 }
 
-#ifdef CONFIG_HPS_SDR_CTRLCFG_CTRLCFG_ECCEN
+#if CONFIG_HPS_SDR_CTRLCFG_CTRLCFG_ECCEN == 1
 /* init the whole SDRAM ECC bit */
 void sdram_ecc_init(void)
 {
@@ -558,5 +558,10 @@ void sdram_ecc_init(void)
 	arm_pl330_transfer(&pl330);
 
 	printf("SDRAM: ECC initialized successfully\n");
+}
+#else
+void sdram_ecc_init(void)
+{
+	puts("SDRAM: NOT initializing SDRAM ECC\n");
 }
 #endif

@@ -17,6 +17,7 @@
 #include <asm/arch/clock_manager.h>
 #include <asm/arch/scan_manager.h>
 #include <asm/arch/sdram.h>
+#include <qts/sdram_config.h>
 #include <asm/arch/scu.h>
 #include <asm/arch/nic301.h>
 
