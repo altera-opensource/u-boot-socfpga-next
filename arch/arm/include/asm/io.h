@@ -25,7 +25,6 @@
 #include <linux/types.h>
 #include <asm/byteorder.h>
 #include <asm/memory.h>
-#include <asm/barriers.h>
 #if 0	/* XXX###XXX */
 #include <asm/arch/hardware.h>
 #endif	/* XXX###XXX */
@@ -137,7 +136,8 @@ static inline void __raw_readsl(unsigned long addr, void *data, int longlen)
  * TODO: The kernel offers some more advanced versions of barriers, it might
  * have some advantages to use them instead of the simple one here.
  */
-#define mb()		dsb()
+#define mb()		asm volatile("dsb sy" : : : "memory")
+#define dmb()		__asm__ __volatile__ ("" : : : "memory")
 #define __iormb()	dmb()
 #define __iowmb()	dmb()
 

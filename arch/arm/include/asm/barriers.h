@@ -30,22 +30,15 @@
 
 #endif /* !CONFIG_ARM64 */
 
-#if __LINUX_ARM_ARCH__ >= 7
+#if defined(__ARM_ARCH_7A__) || defined(CONFIG_ARM64)
 #define ISB	asm volatile ("isb sy" : : : "memory")
 #define DSB	asm volatile ("dsb sy" : : : "memory")
 #define DMB	asm volatile ("dmb sy" : : : "memory")
-#elif __LINUX_ARM_ARCH__ == 6
+#else
 #define ISB	CP15ISB
 #define DSB	CP15DSB
 #define DMB	CP15DMB
-#else
-#define ISB	asm volatile ("" : : : "memory")
-#define DSB	CP15DSB
-#define DMB	asm volatile ("" : : : "memory")
 #endif
 
-#define isb()	ISB
-#define dsb()	DSB
-#define dmb()	DMB
 #endif	/* __ASSEMBLY__ */
 #endif	/* __BARRIERS_H__ */
