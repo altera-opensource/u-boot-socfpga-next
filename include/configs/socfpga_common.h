@@ -346,7 +346,4 @@ unsigned int cm_get_qspi_controller_clk_hz(void);
  */
 #define CONFIG_SPL_STACK		CONFIG_SYS_INIT_SP_ADDR
 
-/* Enable PL330 DMA */
-#define CONFIG_PL330_DMA
-
 #endif	/* __CONFIG_SOCFPGA_COMMON_H__ */
