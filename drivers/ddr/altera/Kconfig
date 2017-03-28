@@ -1,0 +1,6 @@
+config ALTERA_SDRAM
+	bool "SoCFPGA DDR SDRAM driver"
+	depends on TARGET_SOCFPGA_GEN5
+	default y if TARGET_SOCFPGA_GEN5
+	help
+	  Enable DDR SDRAM controller for the SoCFPGA devices.
