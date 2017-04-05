@@ -8,6 +8,7 @@
 #define _RESET_MANAGER_GEN5_H_
 
 void reset_deassert_peripherals_handoff(void);
+int socfpga_bridges_reset(int enable);
 
 struct socfpga_reset_manager {
 	u32	status;

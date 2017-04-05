@@ -9,8 +9,6 @@
 
 void reset_cpu(ulong addr);
 
-int socfpga_bridges_reset(int enable);
-
 void socfpga_per_reset(u32 reset, int set);
 void socfpga_per_reset_all(void);
 

@@ -330,7 +330,7 @@ int socfpga_bridges_reset(int enable)
 	return 0;
 }
 #else
-int socfpga_bridges_reset(int enable)
+int socfpga_bridges_reset(void)
 {
 	int ret;
 
