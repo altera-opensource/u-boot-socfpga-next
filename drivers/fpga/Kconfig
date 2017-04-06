@@ -23,6 +23,22 @@ config FPGA_CYCLON2
 	  Enable FPGA driver for loading bitstream in BIT and BIN format
 	  on Altera Cyclone II device.
 
+config FPGA_SOCFPGA
+	bool "Enable Altera common FPGA drivers"
+	default y if FPGA_ALTERA
+	help
+	  Default Y here to enable the Altera common FPGA driver
+
+	  This provides common functionality for Altera devices.
+
+config FPGA_GEN5
+	bool "Enable Altera FPGA driver for gen5"
+	depends on FPGA_SOCFPGA
+	help
+	  Say Y here to enable the Altera gen5 FPGA specific driver
+
+	  This provides functionality for Altera gen5 devices.
+
 config FPGA_XILINX
 	bool "Enable Xilinx FPGA drivers"
 	select FPGA
