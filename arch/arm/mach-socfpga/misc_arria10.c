@@ -234,6 +234,26 @@ unsigned int uart_com_port(const void *blob)
 	return shared_uart_com_port(blob);
 }
 
+int is_chosen_boolean_true(const void *blob, const char *name)
+{
+	int node;
+	int rval = 0;
+
+	node = fdt_subnode_offset(blob, 0, "chosen");
+
+	if (node >= 0)
+		rval = fdtdec_get_bool(blob, node, name);
+
+	return rval;
+}
+
+int is_early_release_fpga_config(const void *blob)
+{
+	static const char *name = "early-release-fpga-config";
+
+	return is_chosen_boolean_true(blob, name);
+}
+
 /*
  * Print CPU information
  */

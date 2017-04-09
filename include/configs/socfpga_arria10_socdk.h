@@ -59,6 +59,13 @@
  * Flash configurations
  */
 #define CONFIG_SYS_MAX_FLASH_BANKS     1
+/* Default SDMMC physical address for periph.rbf (sector alignment) */
+#define SDMMC_RBF_RAWADDR		0x2000000
+#define CONFIG_FS_FAT_MAX_CLUSTSIZE (16 * 1024)
+
+#if !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_RBF_SDMMC_FAT_SUPPORT)
+#define CONFIG_RBF_SDMMC_FAT_SUPPORT
+#endif
 
 /* The rest of the configuration is shared */
 #include <configs/socfpga_common.h>

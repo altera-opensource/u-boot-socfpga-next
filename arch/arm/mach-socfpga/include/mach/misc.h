@@ -26,6 +26,8 @@ static inline void socfpga_fpga_add(void) {}
 unsigned int dedicated_uart_com_port(const void *blob);
 unsigned int shared_uart_com_port(const void *blob);
 unsigned int uart_com_port(const void *blob);
+int is_early_release_fpga_config(const void *blob);
+int is_chosen_boolean_true(const void *blob, const char *name);
 #endif
 
 #endif /* _MISC_H_ */
