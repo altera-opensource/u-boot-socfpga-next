@@ -28,6 +28,7 @@ obj-y	+= clock_manager_arria10.o
 obj-y	+= misc_arria10.o
 obj-y	+= pinmux_arria10.o
 obj-y	+= reset_manager_arria10.o
+obj-y	+= lowlevel_init.o
 endif
 
 ifdef CONFIG_SPL_BUILD

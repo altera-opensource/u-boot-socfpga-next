@@ -39,6 +39,14 @@ config FPGA_GEN5
 
 	  This provides functionality for Altera gen5 devices.
 
+config FPGA_ARRIA10
+	bool "Enable Altera FPGA driver for Arria 10"
+	depends on FPGA_SOCFPGA
+	help
+	  Say Y here to enable the Altera Arria 10 FPGA specific driver
+
+	  This provides functionality for Altera Arria 10 devices.
+
 config FPGA_XILINX
 	bool "Enable Xilinx FPGA drivers"
 	select FPGA
