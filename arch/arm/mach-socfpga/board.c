@@ -49,6 +49,19 @@ void dram_init_banksize(void)
 	__attribute__((weak, alias("__dram_init_banksize")));
 #endif
 
+#if defined(CONFIG_SYS_I2C)
+void i2c_init_board(void)
+{
+#if defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
+	socfpga_per_reset(SOCFPGA_RESET(I2C0),0);
+	socfpga_per_reset(SOCFPGA_RESET(I2C1),0);
+	socfpga_per_reset(SOCFPGA_RESET(I2C2),0);
+	socfpga_per_reset(SOCFPGA_RESET(I2C3),0);
+	socfpga_per_reset(SOCFPGA_RESET(I2C4),0);
+#endif
+}
+#endif
+
 #ifdef CONFIG_USB_GADGET
 struct dwc2_plat_otg_data socfpga_otg_data = {
 	.usb_gusbcfg	= 0x1417,
