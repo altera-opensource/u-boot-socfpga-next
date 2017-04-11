@@ -8,7 +8,9 @@
 
 #include <common.h>
 #include <errno.h>
+#include <fdtdec.h>
 #include <asm/arch/reset_manager.h>
+#include <asm/arch/clock_manager.h>
 #include <asm/io.h>
 
 #include <usb.h>
@@ -25,6 +27,9 @@ int board_init(void)
 {
 	/* Address of boot parameters for ATAG (if ATAG is used) */
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
+
+	/* configuring the clock based on handoff */
+	cm_basic_init(gd->fdt_blob);
 
 	return 0;
 }

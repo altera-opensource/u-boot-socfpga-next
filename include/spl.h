@@ -10,6 +10,7 @@
 /* Platform-specific defines */
 #include <linux/compiler.h>
 #include <asm/spl.h>
+#include <mmc.h>
 
 /* Value in r0 indicates we booted from U-Boot */
 #define UBOOT_NOT_LOADED_FROM_SPL	0x13578642
@@ -67,6 +68,7 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 void preloader_console_init(void);
 u32 spl_boot_device(void);
 u32 spl_boot_mode(const u32 boot_device);
+int spl_mmc_find_device(struct mmc **mmcp, u32 boot_device);
 
 /**
  * spl_set_header_raw_uboot() - Set up a standard SPL image structure

@@ -298,17 +298,25 @@ unsigned int cm_get_qspi_controller_clk_hz(void);
  *
  * SRAM Memory layout:
  *
- * 0xFFFF_0000 ...... Start of SRAM
- * 0xFFFF_xxxx ...... Top of stack (grows down)
- * 0xFFFF_yyyy ...... Malloc area
+ * 0xFFFF_0000 ...... Start of SRAM (bottom)
+ * 0xFFFF_xxxx ...... Top of stack (grows down to bottom)
+ * 0xFFFF_yyyy ...... Malloc area (grows up to top)
  * 0xFFFF_zzzz ...... Global Data
- * 0xFFFF_FF00 ...... End of SRAM
+ * 0xFFFF_FF00 ...... End of SRAM (top)
  */
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_TEXT_BASE		CONFIG_SYS_INIT_RAM_ADDR
 #define CONFIG_SPL_MAX_SIZE		CONFIG_SYS_INIT_RAM_SIZE
 #if defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
 #define CONFIG_SPL_BOARD_INIT
+/* SPL memory allocation configuration */
+#ifndef CONFIG_SYS_SPL_MALLOC_START
+#define CONFIG_SYS_SPL_MALLOC_SIZE	0x00002000
+#define CONFIG_SYS_SPL_MALLOC_START	(CONFIG_SYS_INIT_RAM_SIZE - \
+					 GENERATED_GBL_DATA_SIZE - \
+					 CONFIG_SYS_SPL_MALLOC_SIZE + \
+					 CONFIG_SYS_INIT_RAM_ADDR)
+#endif
 #endif
 
 /* SPL SDMMC boot support */
@@ -339,7 +347,7 @@ unsigned int cm_get_qspi_controller_clk_hz(void);
 /*
  * Stack setup
  */
-#define CONFIG_SPL_STACK		CONFIG_SYS_INIT_SP_ADDR
+#define CONFIG_SPL_STACK		(CONFIG_SYS_SPL_MALLOC_START - 1)
 
 /* Extra Environment */
 #ifndef CONFIG_SPL_BUILD

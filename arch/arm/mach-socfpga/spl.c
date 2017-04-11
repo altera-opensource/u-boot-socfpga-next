@@ -16,14 +16,19 @@
 #include <asm/arch/freeze_controller.h>
 #include <asm/arch/clock_manager.h>
 #include <asm/arch/scan_manager.h>
-#include <asm/arch/sdram.h>
+#include <asm/arch/fpga_manager.h>
 #include <asm/arch/scu.h>
 #include <asm/arch/nic301.h>
 #include <asm/sections.h>
 #include <fdtdec.h>
+#include <mmc.h>
 #include <watchdog.h>
-#if defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
+#include <asm/arch/sdram.h>
+#elif defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
 #include <asm/arch/pinmux.h>
+#include <asm/arch/cff.h>
+#include <asm/arch/sdram_arria10.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -212,6 +217,9 @@ void board_init_f(ulong dummy)
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
+	int rval = 0;
+	struct spl_boot_device bootdev;
+
 	/* configuring the clock based on handoff */
 	cm_basic_init(gd->fdt_blob);
 	WATCHDOG_RESET();
@@ -224,6 +232,31 @@ void spl_board_init(void)
 
 	/* enable console uart printing */
 	preloader_console_init();
+	WATCHDOG_RESET();
+
+	bootdev.boot_device = spl_boot_device();
+
+	if(BOOT_DEVICE_MMC1 == bootdev.boot_device)
+	{
+		struct mmc *mmc = NULL;
+		int err = 0;
+
+		spl_mmc_find_device(&mmc, bootdev.boot_device);
+
+		err = mmc_init(mmc);
+		if (err) {
+#ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
+			printf("spl: mmc init failed with error: %d\n", err);
+#endif
+		}
+		rval = cff_from_sdmmc_env();
+
+		if (rval > 0) {
+			config_pins(gd->fdt_blob, "shared");
+
+			ddr_calibration_sequence();
+		}
+	}
 }
 #endif
 

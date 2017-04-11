@@ -113,7 +113,7 @@ int spl_mmc_get_device_index(u32 boot_device)
 	return -ENODEV;
 }
 
-static int spl_mmc_find_device(struct mmc **mmcp, u32 boot_device)
+int spl_mmc_find_device(struct mmc **mmcp, u32 boot_device)
 {
 #ifdef CONFIG_DM_MMC
 	struct udevice *dev;

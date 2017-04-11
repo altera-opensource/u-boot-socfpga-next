@@ -7,6 +7,12 @@
 #ifndef _RESET_MANAGER_H_
 #define _RESET_MANAGER_H_
 
+#if defined(CONFIG_TARGET_SOCFPGA_GEN5)
+#include <dt-bindings/reset/altr,rst-mgr.h>
+#elif defined(CONFIG_TARGET_SOCFPGA_ARRIA10)
+#include <dt-bindings/reset/altr,rst-mgr-a10.h>
+#endif
+
 void reset_cpu(ulong addr);
 
 void socfpga_per_reset(u32 reset, int set);

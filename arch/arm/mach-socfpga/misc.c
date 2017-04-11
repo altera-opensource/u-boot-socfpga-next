@@ -21,8 +21,6 @@
 #include <asm/arch/scu.h>
 #include <asm/pl310.h>
 
-#include <dt-bindings/reset/altr,rst-mgr.h>
-
 DECLARE_GLOBAL_DATA_PTR;
 
 static const struct pl310_regs *const pl310 =
