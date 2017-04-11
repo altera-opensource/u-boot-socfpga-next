@@ -8,6 +8,8 @@
 #define _SOCFPGA_SDRAM_ARRIA10_H_
 
 #ifndef __ASSEMBLY__
+int ddr_calibration_sequence(void);
+int is_sdram_cal_success(void);
 
 struct socfpga_ecc_hmc {
 	u32 ip_rev_id;
@@ -204,6 +206,106 @@ struct socfpga_io48_mmr {
 	u32 niosreserve1;
 	u32 niosreserve2;
 };
+
+union dramaddrw_reg {
+	struct {
+		u32 cfg_col_addr_width:5;
+		u32 cfg_row_addr_width:5;
+		u32 cfg_bank_addr_width:4;
+		u32 cfg_bank_group_addr_width:2;
+		u32 cfg_cs_addr_width:3;
+		u32 reserved:13;
+	};
+	u32 word;
+};
+
+union ctrlcfg0_reg {
+	struct {
+		u32 cfg_mem_type:4;
+		u32 cfg_dimm_type:3;
+		u32 cfg_ac_pos:2;
+		u32 cfg_ctrl_burst_len:5;
+		u32 reserved:18;  /* Other fields unused */
+	};
+	u32 word;
+};
+
+union ctrlcfg1_reg {
+	struct {
+		u32 cfg_dbc3_burst_len:5;
+		u32 cfg_addr_order:2;
+		u32 cfg_ctrl_enable_ecc:1;
+		u32 reserved:24;  /* Other fields unused */
+	};
+	u32 word;
+};
+
+union caltiming0_reg {
+	struct {
+		u32 cfg_act_to_rdwr:6;
+		u32 cfg_act_to_pch:6;
+		u32 cfg_act_to_act:6;
+		u32 cfg_act_to_act_db:6;
+		u32 reserved:8;  /* Other fields unused */
+	};
+	u32 word;
+};
+
+union caltiming1_reg {
+	struct {
+		u32 cfg_rd_to_rd:6;
+		u32 cfg_rd_to_rd_dc:6;
+		u32 cfg_rd_to_rd_db:6;
+		u32 cfg_rd_to_wr:6;
+		u32 cfg_rd_to_wr_dc:6;
+		u32 reserved:2;
+	};
+	u32 word;
+};
+
+union caltiming2_reg {
+	struct {
+		u32 cfg_rd_to_wr_db:6;
+		u32 cfg_rd_to_pch:6;
+		u32 cfg_rd_ap_to_valid:6;
+		u32 cfg_wr_to_wr:6;
+		u32 cfg_wr_to_wr_dc:6;
+		u32 reserved:2;
+	};
+	u32 word;
+};
+
+union caltiming3_reg {
+	struct {
+		u32 cfg_wr_to_wr_db:6;
+		u32 cfg_wr_to_rd:6;
+		u32 cfg_wr_to_rd_dc:6;
+		u32 cfg_wr_to_rd_db:6;
+		u32 cfg_wr_to_pch:6;
+		u32 reserved:2;
+	};
+	u32 word;
+};
+
+union caltiming4_reg {
+	struct {
+		u32 cfg_wr_ap_to_valid:6;
+		u32 cfg_pch_to_valid:6;
+		u32 cfg_pch_all_to_valid:6;
+		u32 cfg_arf_to_valid:8;
+		u32 cfg_pdn_to_valid:6;
+	};
+	u32 word;
+};
+
+union caltiming9_reg {
+	struct {
+		u32 cfg_4_act_to_act:8;
+		u32 reserved:24;
+	};
+	u32 word;
+};
+
 #endif /*__ASSEMBLY__*/
 
 #define IO48_MMR_CTRLCFG0_DB2_BURST_LENGTH_MASK		0x1F000000

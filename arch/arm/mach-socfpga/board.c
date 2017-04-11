@@ -29,6 +29,21 @@ int board_init(void)
 	return 0;
 }
 
+#if !defined(CONFIG_SYS_SDRAM_BASE) && !defined(CONFIG_SYS_SDRAM_SIZE)
+void dram_init_banksize(void)
+{
+	fdtdec_setup_memory_banksize();
+}
+#else
+void __dram_init_banksize(void)
+{
+	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+	gd->bd->bi_dram[0].size =  CONFIG_SYS_SDRAM_SIZE;
+}
+void dram_init_banksize(void)
+	__attribute__((weak, alias("__dram_init_banksize")));
+#endif
+
 #ifdef CONFIG_USB_GADGET
 struct dwc2_plat_otg_data socfpga_otg_data = {
 	.usb_gusbcfg	= 0x1417,

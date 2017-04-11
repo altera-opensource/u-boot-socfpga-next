@@ -163,6 +163,7 @@ enum fdt_compat_id {
 	COMPAT_ALTERA_SOCFPGA_F2SDR0,           /* SoCFPGA fpga2SDRAM0 bridge */
 	COMPAT_ALTERA_SOCFPGA_F2SDR1,           /* SoCFPGA fpga2SDRAM1 bridge */
 	COMPAT_ALTERA_SOCFPGA_F2SDR2,           /* SoCFPGA fpga2SDRAM2 bridge */
+	COMPAT_ALTERA_SOCFPGA_NOC,             	/* Arria10 NOC */
 
 	COMPAT_COUNT,
 };
