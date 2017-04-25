@@ -249,7 +249,7 @@ void spl_board_init(void)
 			printf("spl: mmc init failed with error: %d\n", err);
 #endif
 		}
-		rval = cff_from_sdmmc_env();
+		rval = cff_from_sdmmc_env(false);
 
 		if (rval > 0) {
 			config_pins(gd->fdt_blob, "shared");

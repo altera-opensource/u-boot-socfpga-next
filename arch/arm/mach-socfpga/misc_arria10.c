@@ -12,6 +12,7 @@
 #include <netdev.h>
 #include <ns16550.h>
 #include <watchdog.h>
+#include <asm/arch/cff.h>
 #include <asm/arch/misc.h>
 #include <asm/arch/reset_manager.h>
 #include <asm/arch/sdram_arria10.h>
@@ -103,7 +104,16 @@ int arch_early_init_r(void)
 #else
 int arch_early_init_r(void)
 {
-	return 0;
+	int rval = -ENOENT;
+
+	socfpga_reset_deassert_bridges_handoff();
+
+	rval = cff_from_sdmmc_env(true);
+
+	if (rval > 0)
+		return 0;
+	else
+		return rval;
 }
 #endif
 
@@ -252,6 +262,32 @@ int is_early_release_fpga_config(const void *blob)
 	static const char *name = "early-release-fpga-config";
 
 	return is_chosen_boolean_true(blob, name);
+}
+
+u32 boot_device(void)
+{
+	const u32 bsel = readl(&sysmgr_regs->bootinfo);
+
+	switch (SYSMGR_GET_BOOTINFO_BSEL(bsel)) {
+	case 0x1:	/* FPGA (HPS2FPGA Bridge) */
+		return BOOT_DEVICE_RAM;
+	case 0x2:	/* NAND Flash (1.8V) */
+	case 0x3:	/* NAND Flash (3.0V) */
+		socfpga_per_reset(SOCFPGA_RESET(NAND), 0);
+		return BOOT_DEVICE_NAND;
+	case 0x4:	/* SD/MMC External Transceiver (1.8V) */
+	case 0x5:	/* SD/MMC Internal Transceiver (3.0V) */
+		socfpga_per_reset(SOCFPGA_RESET(SDMMC), 0);
+		socfpga_per_reset(SOCFPGA_RESET(DMA), 0);
+		return BOOT_DEVICE_MMC1;
+	case 0x6:	/* QSPI Flash (1.8V) */
+	case 0x7:	/* QSPI Flash (3.0V) */
+		socfpga_per_reset(SOCFPGA_RESET(QSPI), 0);
+		return BOOT_DEVICE_SPI;
+	default:
+		printf("Invalid boot device (bsel=%08x)!\n", bsel);
+		hang();
+	}
 }
 
 /*

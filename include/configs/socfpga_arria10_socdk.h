@@ -23,7 +23,7 @@
 #define CONFIG_SYS_DCACHE_OFF
 
 /* Memory configurations  */
-#define PHYS_SDRAM_1_SIZE		0x80000000
+#define PHYS_SDRAM_1_SIZE		0x40000000
 
 /* Ethernet on SoC (EMAC) */
 #if defined(CONFIG_CMD_NET)
@@ -60,8 +60,7 @@
  */
 #define CONFIG_SYS_MAX_FLASH_BANKS     1
 /* Default SDMMC physical address for periph.rbf (sector alignment) */
-#define SDMMC_RBF_RAWADDR		0x2000000
-#define CONFIG_FS_FAT_MAX_CLUSTSIZE (16 * 1024)
+#define CONFIG_FS_FAT_MAX_CLUSTSIZE (32 * 1024)
 
 #if !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_RBF_SDMMC_FAT_SUPPORT)
 #define CONFIG_RBF_SDMMC_FAT_SUPPORT

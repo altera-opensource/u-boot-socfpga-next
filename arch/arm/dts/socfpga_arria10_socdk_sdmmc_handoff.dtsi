@@ -21,6 +21,7 @@
 	chosen {
 		/* Bootloader setting: uboot.rbf_filename */
 		cff-file = "ghrd_10as066n2.periph.rbf.mkimage";
+		cffcore-file = "ghrd_10as066n2.core.rbf.mkimage";
 		early-release-fpga-config;
 	};
 

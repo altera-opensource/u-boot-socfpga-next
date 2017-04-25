@@ -34,11 +34,8 @@ struct cff_flash_info {
 	struct image_header header;
 };
 
-#ifdef CONFIG_SPL_BUILD
-int cff_from_sdmmc_env(void);
-#endif
+int cff_from_sdmmc_env(unsigned int core);
 int cff_from_flash(fpga_fs_info *fpga_fsinfo);
-const char *get_cff_filename(const void *fdt, int *len);
 #endif /* __ASSEMBLY__ */
 
 #endif /* _SOCFPGA_CFF_H_ */

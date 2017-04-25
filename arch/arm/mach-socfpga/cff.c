@@ -19,7 +19,6 @@
 #include <watchdog.h>
 #include <fdtdec.h>
 #include <spi_flash.h>
-#include <spl.h>
 
 #define RBF_UNENCRYPTED 0xa65c
 #define RBF_ENCRYPTED 0xa65d
@@ -37,6 +36,11 @@ static int cff_flash_read(struct cff_flash_info *cff_flashinfo, u32 *buffer,
 	u32 *buffer_sizebytes);
 static int cff_flash_preinit(struct cff_flash_info *cff_flashinfo,
 	fpga_fs_info *fpga_fsinfo, u32 *buffer, u32 *buffer_sizebytes);
+static const char *get_cff_filename(const void *fdt, int *len,
+	unsigned int core);
+#ifndef CONFIG_RBF_SDMMC_FAT_SUPPORT
+static int get_cff_offset(const void *fdt, unsigned int core);
+#endif
 
 static struct mmc *init_mmc_device(int dev, bool force_init)
 {
@@ -125,7 +129,7 @@ static int flash_read(struct cff_flash_info *cff_flashinfo,
 		return ret;
 }
 
-const char *get_cff_filename(const void *fdt, int *len)
+const char *get_cff_filename(const void *fdt, int *len, unsigned int core)
 {
 	const char *cff_filename = NULL;
 	const char *cell;
@@ -133,7 +137,15 @@ const char *get_cff_filename(const void *fdt, int *len)
 	nodeoffset = fdt_subnode_offset(fdt, 0, "chosen");
 
 	if (nodeoffset >= 0) {
-		cell = fdt_getprop(fdt, nodeoffset, "cff-file", len);
+		if (core) {
+			cell = fdt_getprop(fdt,
+					nodeoffset,
+					"cffcore-file",
+					len);
+		} else {
+			cell = fdt_getprop(fdt, nodeoffset, "cff-file", len);
+		}
+
 		if (cell) {
 			cff_filename = cell;
 		}
@@ -142,25 +154,30 @@ const char *get_cff_filename(const void *fdt, int *len)
 }
 
 #ifndef CONFIG_RBF_SDMMC_FAT_SUPPORT
-static int get_cff_offset(const void *fdt)
+static int get_cff_offset(const void *fdt, unsigned int core)
 {
 	int nodeoffset = 0;
 
 	nodeoffset = fdt_subnode_offset(fdt, 0, "chosen");
 
 	if (nodeoffset >= 0) {
-		if(BOOT_DEVICE_MMC1 == flash_type)
-			return fdtdec_get_int(fdt, nodeoffset, "cff-offset",
-					SDMMC_RBF_RAWADDR);
-		else
-			return fdtdec_get_int(fdt, nodeoffset, "cff-offset", -1);
+		if (core) {
+			return fdtdec_get_int(fdt,
+					nodeoffset,
+					"cffcore-offset",
+					-1);
+		} else {
+			return fdtdec_get_int(fdt,
+					nodeoffset,
+					"cff-offset",
+					-1);
+		}
 	}
 	return -1;
 }
 #endif
 
-#ifdef CONFIG_SPL_BUILD
-int cff_from_sdmmc_env(void)
+int cff_from_sdmmc_env(unsigned int core)
 {
 	int rval = -ENOENT;
 	fpga_fs_info fpga_fsinfo;
@@ -174,12 +191,12 @@ int cff_from_sdmmc_env(void)
 	int sdmmc_rbf_rawaddr = -ENOENT;
 #endif
 
-	flash_type = spl_boot_device();
+	flash_type = boot_device();
 
 	fpga_fsinfo.interface = "sdmmc";
 
 #ifdef CONFIG_RBF_SDMMC_FAT_SUPPORT
-	cff = get_cff_filename(gd->fdt_blob, &len);
+	cff = get_cff_filename(gd->fdt_blob, &len, core);
 
 	/* FAT periph RBF file reading */
 	if (cff && (len > 0)) {
@@ -213,7 +230,6 @@ int cff_from_sdmmc_env(void)
 #endif
 	return rval;
 }
-#endif
 
 void get_rbf_image_info(struct rbf_info *rbf, u16 *buffer)
 {
@@ -227,20 +243,33 @@ void get_rbf_image_info(struct rbf_info *rbf, u16 *buffer)
 
 	for(i = 0; i < word_reading_max; i++)
 	{
-		if(RBF_UNENCRYPTED == *(buffer + i))
+		if(RBF_UNENCRYPTED == *(buffer + i)) /* PERIPH RBF */
 			rbf->security = unencrypted;
-		else if (RBF_UNENCRYPTED == *(buffer + i))
+		else if (RBF_ENCRYPTED == *(buffer + i))
 			rbf->security = encrypted;
+		else if (RBF_UNENCRYPTED == *(buffer + i + 1)) /* CORE RBF */
+					rbf->security = unencrypted;
+		else if (RBF_ENCRYPTED == *(buffer + i + 1))
+					rbf->security = encrypted;
 		else {
 			rbf->security = invalid;
 			continue;
 		}
 
+		/* PERIPH RBF */
 		if (ARRIA10RBF_PERIPH == *(buffer + i + 1)) {
 			rbf->section = periph_section;
 			break;
 		}
 		else if (ARRIA10RBF_CORE == *(buffer + i + 1)) {
+			rbf->section = core_section;
+			break;
+		} /* CORE RBF */
+		else if (ARRIA10RBF_PERIPH == *(buffer + i + 2)) {
+			rbf->section = periph_section;
+			break;
+		}
+		else if (ARRIA10RBF_CORE == *(buffer + i + 2)) {
 			rbf->section = core_section;
 			break;
 		}
@@ -436,8 +465,6 @@ int cff_from_flash(fpga_fs_info *fpga_fsinfo)
 
 	WATCHDOG_RESET();
 
-	buffer = buffer_ori = (u32)cff_flashinfo.buffer;
-
 #ifdef CONFIG_RBF_SDMMC_FAT_SUPPORT
 	cff_flashinfo.sdmmc_flashinfo.dev_part =
 		simple_strtol(fpga_fsinfo->dev_part, NULL, 10);
@@ -451,7 +478,35 @@ int cff_from_flash(fpga_fs_info *fpga_fsinfo)
 	}
 
 #ifdef CONFIG_RBF_SDMMC_FAT_SUPPORT
-	buffer_sizebytes = buffer_sizebytes_ori = sizeof(cff_flashinfo.buffer);
+	/* Loading rbf data with DDR, faster than OCRAM,
+	   only for core rbf */
+	if (gd->ram_size != 0) {
+		ret = fat_size(fpga_fsinfo->filename, (loff_t *)&buffer_sizebytes);
+
+		if(ret){
+			puts("Failed to read file size.\n");
+			return ret;
+		}
+
+		buffer_ori = (u32)memalign(ARCH_DMA_MINALIGN, buffer_sizebytes);
+
+		if (!buffer_ori) {
+			error("RBF calloc failed!\n");
+			return -ENOMEM;
+		}
+
+		/* Loading mkimage header and rbf data into
+		   DDR instead of OCRAM */
+		buffer = buffer_ori;
+
+		buffer_sizebytes_ori = buffer_sizebytes;
+	} else {
+		buffer = buffer_ori = (u32)cff_flashinfo.buffer;
+
+		buffer_sizebytes =
+			buffer_sizebytes_ori =
+				sizeof(cff_flashinfo.buffer);
+	}
 #else
 	/* Adjust to adjacent block */
 	buffer_sizebytes = buffer_sizebytes_ori =
@@ -512,10 +567,11 @@ int cff_from_flash(fpga_fs_info *fpga_fsinfo)
 	 !is_early_release_fpga_config(gd->fdt_blob))) {
 		/* Ensure the FPGA entering config done */
 		status = fpgamgr_program_fini();
-		if (status) {
-			printf("FPGA: Enter user mode.\n");
+		if (status)
 			return status;
-		}
+		else
+			printf("FPGA: Enter user mode.\n");
+
 	} else {
 		printf("Config Error: Unsupported FGPA raw binary type.\n");
 		return -3;

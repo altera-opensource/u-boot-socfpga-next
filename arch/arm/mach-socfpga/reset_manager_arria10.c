@@ -204,7 +204,7 @@ static int get_bridge_init_val(const void *blob, int compat_id)
 	if (node < 0)
 		return 0;
 
-	return fdtdec_get_uint(blob, node, "init-val", 0);
+	return fdtdec_get_uint(blob, node, "altr,init-val", 0);
 }
 
 /* Enable bridges (hps2fpga, lwhps2fpga, fpga2hps, fpga2sdram) per handoff */
