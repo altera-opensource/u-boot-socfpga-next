@@ -9,6 +9,8 @@
 #include <asm/arch/clock_manager.h>
 #include <asm/arch/handoff_s10.h>
 
+#define MMC_FIXED_DIV		4
+
 DECLARE_GLOBAL_DATA_PTR;
 
 static const struct socfpga_clock_manager *clock_manager_base =
@@ -23,6 +25,7 @@ static void cm_write_bypass_mainpll(uint32_t val)
 	writel(val, &clock_manager_base->main_pll.bypass);
 	cm_wait_for_fsm();
 }
+
 static void cm_write_bypass_perpll(uint32_t val)
 {
 	writel(val, &clock_manager_base->per_pll.bypass);
@@ -51,8 +54,10 @@ void cm_basic_init(const struct cm_config * const cfg)
 	cm_write_bypass_mainpll(CLKMGR_BYPASS_MAINPLL_ALL);
 	cm_write_bypass_perpll(CLKMGR_BYPASS_PERPLL_ALL);
 
-	/* setup main PLL dividers */
-	/* calculate the vcocalib value */
+	/*
+	 * setup main PLL dividers
+	 * calculate the vcocalib value
+	 */
 	mdiv = (cfg->main_pll_fdbck >> CLKMGR_FDBCK_MDIV_OFFSET) &
 		CLKMGR_FDBCK_MDIV_MASK;
 	refclkdiv = (cfg->main_pll_pllglob >> CLKMGR_PLLGLOB_REFCLKDIV_OFFSET) &
@@ -67,26 +72,14 @@ void cm_basic_init(const struct cm_config * const cfg)
 		~CLKMGR_PLLGLOB_RST_MASK), &clock_manager_base->main_pll.pllglob);
 	writel(cfg->main_pll_fdbck, &clock_manager_base->main_pll.fdbck);
 	writel(vcocalib, &clock_manager_base->main_pll.vcocalib);
+	writel(vcocalib, &clock_manager_base->per_pll.vcocalib);
 	writel(cfg->main_pll_pllc0, &clock_manager_base->main_pll.pllc0);
 	writel(cfg->main_pll_pllc1, &clock_manager_base->main_pll.pllc1);
 	writel(cfg->main_pll_nocdiv, &clock_manager_base->main_pll.nocdiv);
 
-	/* setup peripheral PLL dividers */
-	/* calculate the vcocalib value */
-	mdiv = (cfg->per_pll_fdbck >> CLKMGR_FDBCK_MDIV_OFFSET) &
-		CLKMGR_FDBCK_MDIV_MASK;
-	refclkdiv = (cfg->per_pll_pllglob >> CLKMGR_PLLGLOB_REFCLKDIV_OFFSET) &
-		     CLKMGR_PLLGLOB_REFCLKDIV_MASK;
-	mscnt = 200 / (6 + mdiv) / refclkdiv;
-	hscnt = (mdiv + 6) * mscnt / refclkdiv - 9;
-	vcocalib = (hscnt & CLKMGR_VCOCALIB_HSCNT_MASK) |
-		   ((mscnt & CLKMGR_VCOCALIB_MSCNT_MASK) <<
-		   CLKMGR_VCOCALIB_MSCNT_OFFSET);
-
 	writel((cfg->per_pll_pllglob & ~CLKMGR_PLLGLOB_PD_MASK &
 		~CLKMGR_PLLGLOB_RST_MASK), &clock_manager_base->per_pll.pllglob);
 	writel(cfg->per_pll_fdbck, &clock_manager_base->per_pll.fdbck);
-	writel(vcocalib, &clock_manager_base->per_pll.vcocalib);
 	writel(cfg->per_pll_pllc0, &clock_manager_base->per_pll.pllc0);
 	writel(cfg->per_pll_pllc1, &clock_manager_base->per_pll.pllc1);
 	writel(cfg->per_pll_emacctl, &clock_manager_base->per_pll.emacctl);
@@ -333,7 +326,7 @@ unsigned int cm_get_mmc_controller_clk_hz(void)
 		clock = cm_get_fpga_clk_hz();
 		break;
 	}
-	return clock/4;
+	return clock / MMC_FIXED_DIV;
 }
 
 unsigned int cm_get_l4_sp_clk_hz(void)
