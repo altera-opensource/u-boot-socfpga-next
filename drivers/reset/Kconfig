@@ -83,4 +83,11 @@ config RESET_ROCKCHIP
 	  though is that some reset signals, like I2C or MISC reset multiple
 	  devices.
 
+config RESET_SOCFPGA
+	bool "Reset controller driver for SoCFPGA"
+	depends on DM_RESET && ARCH_SOCFPGA
+	default y
+	help
+	  Support for reset controller on SoCFPGA platform.
+
 endmenu

@@ -505,6 +505,7 @@
 			compatible = "snps,designware-i2c";
 			reg = <0xffc04000 0x1000>;
 			clocks = <&l4_sp_clk>;
+			resets = <&rst I2C0_RESET>;
 			interrupts = <0 158 0x4>;
 			status = "disabled";
 		};
