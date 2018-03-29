@@ -14,6 +14,7 @@
 	aliases {
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
+		i2c0 = &i2c0;
 		serial0 = &uart0;
 		serial1 = &uart1;
 		timer0 = &timer0;
