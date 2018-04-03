@@ -56,6 +56,10 @@
 	status = "okay";
 };
 
+&i2c0 {
+	status = "okay";
+};
+
 &mmc0 {
 	status = "okay";
 	u-boot,dm-pre-reloc;
